@@ -1,0 +1,6 @@
+vai_lineare(77,77,7)
+vai_lineare(88,8,8)
+vai_lineare(55,77,7)
+vai_lineare(77,7,79)
+vai_lineare(77,88,98)
+arco(7,15,30)

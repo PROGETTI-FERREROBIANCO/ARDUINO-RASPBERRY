@@ -1,0 +1,270 @@
+<!DOCTYPE html>
+<html>
+    <head>
+        <title>MAGNETOMETRO</title>
+        <script src="/static/js/jquery-3.6.0.min.js"></script>
+        <script src="/static/js/eventi.js"></script>
+        <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/3.3.2/chart.min.js"></script>
+        <link rel="preconnect" href="https://fonts.googleapis.com">
+        <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+        <link href="https://fonts.googleapis.com/css2?family=Kodchasan:wght@200&family=Unica+One&display=swap" rel="stylesheet"> 
+          
+    </head>
+    <style>
+
+    body{
+        margin:0;
+        padding:0;
+        background: #FFFBEA;
+        /*background-image: url("{{url_for('static', filename='img/background.jpg')}} ");*/
+        background-repeat: no-repeat;
+        background-attachment: fixed;
+        background-size: cover;
+        display: grid;
+    }
+     .menuicon{
+        display:none; /* togliere icona hambuger icon */
+    }
+    
+    nav{
+        z-index:3;
+      
+        height:auto;
+        background-color:transparent;
+        transition:none;
+        width:auto;
+        float:right;
+        right:12px;
+        visibility:visible;
+        font-family: 'Unica One', cursive;
+        overflow:inherit;
+    }
+    
+    .active{
+        background-color:transparent;
+        color:#FF9115 /* primary super-lightcolor*/;
+    }
+        
+    .active-dropdown{
+        background-color:#FFD666/* primary lightcolor*/;
+    }
+    
+    nav ul{
+        padding:0;
+    }
+        
+    nav ul li a {
+        padding:0;
+        display:inline;
+        font-size:16px;
+        color: black;
+    }
+    
+    nav ul li a:hover {
+        background-color:transparent;
+        color:#FF9115 /* primary super-lightcolor*/;
+    }
+        
+    .submenu{
+        padding-left: 30;
+        
+    }
+    
+    nav ul li {	
+        margin:0;
+        float: right;
+        position:relative;
+        padding:0 16px;
+    }
+    
+    .submenu::after{
+        float: right;
+        padding-left: 6px;
+    }
+
+    nav ul li ul { 
+	position:fixed;
+	height:0;
+	overflow:hidden;
+	background-color: #FF8C14 /* primary color*/
+    }
+        
+    nav ul li:hover ul{
+        height:auto;
+        padding-top: 14px;
+        position: absolute;
+        right: 0;	
+    }
+
+    nav ul li ul li {
+        font-size: 14px;
+        font-weight: normal;
+        float:none;
+
+        padding:0;
+        min-width: 160px;
+        border-top: 1px solid #FFD666/* primary lightcolor*/;
+    }
+
+    nav ul li ul li a {
+        padding: 16px 32px;
+        display: block;
+        background-color: #FF8C14/* primary color*/;
+        color: #FFFBEA;
+        font-weight: normal;
+    }
+
+    nav ul li ul li a:hover {
+        background-color:#FFD666/* primary lightcolor*/;
+        color:#FF9115 /* primary super-lightcolor*/;
+    }
+
+    #divSensori{
+            position: -webkit-sticky;
+            position: sticky; 
+            top: 0px;
+            width:auto;
+            height: auto;
+        
+        }
+    ul{
+        list-style-type: none;
+    }
+
+    nav{
+        background-color: #FFD666;
+        width: 100%;
+        
+    }
+    .icon_sensori{
+        opacity:"1";
+        width: 20px; 
+        height:20px;
+    }
+
+    #altroT{
+        width: 100%;
+        float:right;
+    }
+    p{
+        font-family: 'Kodchasan', sans-serif;
+        font-size: 1.3rem;
+        color: black;
+        float: left;
+    }
+
+    #pSelect{
+        font-family: 'Unica One', cursive;
+        font-size: 1rem;
+        color: black;
+        float: right;
+    }
+
+    #immagine{
+        margin:0;
+        padding:0;
+        background-image: url("/static/img/sfondo_magnetometro.png");
+        background-repeat: no-repeat;
+        background-attachment: fixed;
+        background-size: cover;
+        height: 10rem;
+        opacity: 0.4;
+        text-align: center;
+        font-family: 'Unica One', cursive;
+        font-size: 5rem;
+        vertical-align: middle;
+        
+
+    }
+
+    select{
+        font-family: 'Unica One', cursive;
+        background-color: #FFFBEA;
+        border-color: #FFFBEA
+    }
+
+    h6{
+        font-family: 'Unica One', cursive;
+        font-size: 2rem;
+    }
+
+    #valoreAttuale{
+        font-family: 'Unica One', cursive;
+        font-size: 6rem;
+        color: #FF8C14;
+        
+    }
+
+    td{
+        font-family: 'Unica One', cursive;
+        font-size: 2rem;
+    }
+
+    #grafico{
+        align-content: center;
+        height: 30%;
+        width: 98%;
+    }
+
+    #divGrafico{
+        float: left;
+        width: 100%;
+    }
+
+    table{
+        border: 0;
+        float: right;
+    }
+
+    #testoSensore{
+        font-family: 'Kodchasan', sans-serif;
+    }
+
+    h1{
+        text-align: left;
+        font-family: 'Unica One', cursive;
+        font-size: 2rem;
+        vertical-align: middle;
+        color: #FF9115;
+        
+    }
+
+    </style>
+    <body onload="inizializzazionePagineSensori('{{dati_della_stazione_meteorologica[1]}}', 'magnetometro', '{{dati_della_stazione_meteorologica[2]}}')">
+        <div id="immagine">
+            Magnetometro
+        </div>
+
+        <div id="divSensori">
+        </div>
+
+        <div id="altroT">
+           <table style="border: 0;">
+            <tr>
+                <td>Valore del campo magnetico attuale:        </td>
+                <td id="valoreAttuale"></td>
+            </tr>
+           </table><br><br><br>
+           <div id="testoSensore"> <br><h1>Informazioni sul nostro sensore: </h1>
+            <img src="/static/img/foto_giroscopio.jpg" style="float: left; width: 20%; height: 20%;">
+               <p style="width: 58%;">Il magnetometro presente all’interno della stazione meteorologica è il 1606-MPU9250.
+                Questo tipo di sensore rileva il campo magnetico in un range di ± 4800µT.<br>
+                Questo è il <a href="https://www.futurashop.it/image/catalog/data/Download/MPU-9250.pdf">link</a>
+                della scheda tecnica, nel caso si volessero ulteriori informazioni
+                riguardo il suo funzionamento e l’aspetto elettrico. </p>
+                <img src="/static/img/foto_giroscopio.jpg" style="float: right; width: 20%; height: 20%;">
+           </div>
+            <div id="divGrafico"> <br><h1>Il grafico: </h1>
+                <p>Di seguito è riportato il grafico con i dati registrati durante l'anno ed aggiornati ad oggi. </p><br><br>
+                <p id="pSelect">Dati di questo <select name="arco_temporale" id="arco_temporale" onchange="opzioneSelezionata('magnetometro', 'µT')">
+                    <option value="optgiorno">giorno</option>
+                    <option value="optmese">mese</option>
+                    <option value="optanno">anno</option>
+                </select></p>
+                <div style="text-align: center;">
+                    <canvas id="grafico" ></canvas>
+                </div>
+            </div>
+        </div>
+    </body>
+</html>

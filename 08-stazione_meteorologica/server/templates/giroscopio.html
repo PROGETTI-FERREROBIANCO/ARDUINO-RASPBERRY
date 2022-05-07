@@ -1,0 +1,393 @@
+<!DOCTYPE html>
+<html>
+    <head>
+        <title>GIROSCOPIO</title>
+        <script src="/static/js/jquery-3.6.0.min.js"></script>
+        <script src="/static/js/eventi.js"></script>
+        <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/3.3.2/chart.min.js"></script>
+
+    <!--INCLUSIONE PER POTER UTILIZZARE Babylon.js-->
+        <script src="https://cdnjs.cloudflare.com/ajax/libs/dat-gui/0.6.2/dat.gui.min.js"></script>
+        <script src="https://preview.babylonjs.com/ammo.js"></script>
+        <script src="https://preview.babylonjs.com/cannon.js"></script>
+        <script src="https://preview.babylonjs.com/Oimo.js"></script>
+        <script src="https://preview.babylonjs.com/earcut.min.js"></script>
+        <script src="https://preview.babylonjs.com/babylon.js"></script>
+        <script src="https://preview.babylonjs.com/materialsLibrary/babylonjs.materials.min.js"></script>
+        <script src="https://preview.babylonjs.com/proceduralTexturesLibrary/babylonjs.proceduralTextures.min.js"></script>
+        <script src="https://preview.babylonjs.com/postProcessesLibrary/babylonjs.postProcess.min.js"></script>
+        <script src="https://preview.babylonjs.com/loaders/babylonjs.loaders.js"></script>
+        <script src="https://preview.babylonjs.com/serializers/babylonjs.serializers.min.js"></script>
+        <script src="https://preview.babylonjs.com/gui/babylon.gui.min.js"></script>
+        <script src="https://preview.babylonjs.com/inspector/babylon.inspector.bundle.js"></script>
+    <!------------------------------------------------->
+
+        <link rel="preconnect" href="https://fonts.googleapis.com">
+        <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+        <link href="https://fonts.googleapis.com/css2?family=Kodchasan:wght@200&family=Unica+One&display=swap" rel="stylesheet"> 
+          
+    </head>
+    <style>
+
+    body{
+        margin:0;
+        padding:0;
+        background: #FFFBEA;
+        /*background-image: url("{{url_for('static', filename='img/background.jpg')}} ");*/
+        background-repeat: no-repeat;
+        background-attachment: fixed;
+        background-size: cover;
+        display: grid;
+    }
+     .menuicon{
+        display:none; /* togliere icona hambuger icon */
+    }
+    
+    nav{
+        z-index:3;
+      
+        height:auto;
+        background-color:transparent;
+        transition:none;
+        width:auto;
+        float:right;
+        right:12px;
+        visibility:visible;
+        font-family: 'Unica One', cursive;
+        overflow:inherit;
+    }
+    
+    .active{
+        background-color:transparent;
+        color:#FF9115 /* primary super-lightcolor*/;
+    }
+        
+    .active-dropdown{
+        background-color:#FFD666/* primary lightcolor*/;
+    }
+    
+    nav ul{
+        padding:0;
+    }
+        
+    nav ul li a {
+        padding:0;
+        display:inline;
+        font-size:16px;
+        color: black;
+    }
+    
+    nav ul li a:hover {
+        background-color:transparent;
+        color:#FF9115 /* primary super-lightcolor*/;
+    }
+        
+    .submenu{
+        padding-left: 30;
+        
+    }
+    
+    nav ul li {	
+        margin:0;
+        float: right;
+        position:relative;
+        padding:0 16px;
+    }
+    
+    .submenu::after{
+        float: right;
+        padding-left: 6px;
+    }
+
+    nav ul li ul { 
+	position:fixed;
+	height:0;
+	overflow:hidden;
+	background-color: #FF8C14 /* primary color*/
+    }
+        
+    nav ul li:hover ul{
+        height:auto;
+        padding-top: 14px;
+        position: absolute;
+        right: 0;	
+    }
+
+    nav ul li ul li {
+        font-size: 14px;
+        font-weight: normal;
+        float:none;
+
+        padding:0;
+        min-width: 160px;
+        border-top: 1px solid #FFD666/* primary lightcolor*/;
+    }
+
+    nav ul li ul li a {
+        padding: 16px 32px;
+        display: block;
+        background-color: #FF8C14/* primary color*/;
+        color: #FFFBEA;
+        font-weight: normal;
+    }
+
+    nav ul li ul li a:hover {
+        background-color:#FFD666/* primary lightcolor*/;
+        color:#FF9115 /* primary super-lightcolor*/;
+    }
+
+    #divSensori{
+            position: -webkit-sticky;
+            position: sticky; 
+            top: 0px;
+            width:auto;
+            height: auto;
+        
+        }
+    ul{
+        list-style-type: none;
+    }
+
+    nav{
+        background-color: #FFD666;
+        width: 100%;
+        
+    }
+    .icon_sensori{
+        opacity:"1";
+        width: 20px; 
+        height:20px;
+    }
+
+    #altroT{
+        width: 100%;
+        float:right;
+    }
+    p{
+        font-family: 'Kodchasan', sans-serif;
+        font-size: 1.3rem;
+        color: black;
+        float: left;
+    }
+
+    #pSelect{
+        font-family: 'Unica One', cursive;
+        font-size: 1rem;
+        color: black;
+        float: right;
+    }
+
+    #immagine{
+        margin:0;
+        padding:0;
+        background-image: url("/static/img/sfondo_giroscopio.png");
+        background-repeat: no-repeat;
+        background-attachment: fixed;
+        background-size: cover;
+        height: 10rem;
+        opacity: 0.4;
+        text-align: center;
+        font-family: 'Unica One', cursive;
+        font-size: 5rem;
+        vertical-align: middle;
+        
+
+    }
+
+    select{
+        font-family: 'Unica One', cursive;
+        background-color: #FFFBEA;
+        border-color: #FFFBEA
+    }
+
+    h6{
+        font-family: 'Unica One', cursive;
+        font-size: 2rem;
+    }
+
+    .valoreAttualeGiroscopio{
+        font-family: 'Unica One', cursive;
+        color: #FF8C14;
+        float: right;
+        font-size: 2rem;
+        
+    }
+
+    td{
+        font-family: 'Unica One', cursive;
+        font-size: 2rem;
+    }
+
+    table{
+        border: 0;
+        float: right;
+    }
+
+    #testoSensore{
+        font-family: 'Kodchasan', sans-serif;
+        display: flow-root;
+        width: 100%;
+    }
+
+    h1{
+        text-align: left;
+        font-family: 'Unica One', cursive;
+        font-size: 2rem;
+        vertical-align: middle;
+        color: #FF9115;
+        
+    }
+
+    #renderCanvas {
+                width: 80%;
+                height: 10%;
+                touch-action: none;
+                background-color: #FFFBEA;
+            }
+
+    .radio-toolbar input[type="radio"] {
+        opacity: 0;
+        position: fixed;
+        width: 0;
+        }
+    
+    .radio-toolbar label {
+        display: inline-block;
+        background-color: #FFFBEA;
+        padding: 1px 2px;
+        font-family: 'Kodchasan', sans-serif;
+        font-size: 10px;
+        font-weight: bold;
+        color: #444;
+        border: 2px solid #444;
+    }
+
+    .radio-toolbar input[type="radio"]:checked + label {
+        background-color:#FF8C14;
+        border:2px solid #FF8C14;
+    }
+
+    .radio-toolbar{
+        float: right;
+        height: min-content;
+    }
+    #divRotazione{
+        width: 100%;
+    }
+    </style>
+    <body onload="inizializzazionePagineSensori('{{dati_della_stazione_meteorologica[1]}}','giroscopio', '{{dati_della_stazione_meteorologica[2]}}')">
+        <div id="immagine">
+            Giroscopio
+        </div>
+
+        <div id="divSensori">
+        </div>
+
+        <div id="altroT">
+           <table style="border: 0;">
+            <tr>
+                <td style="margin-right: 7%;">Orientamento attuale:        </td>
+                <td id="valoreAttualeX" class="valoreAttualeGiroscopio"></td>
+            </tr>
+            <tr>
+                <td></td>
+                <td id="valoreAttualeY" class="valoreAttualeGiroscopio"></td>
+            </tr>
+            <tr><td></td><td id="valoreAttualeZ" class="valoreAttualeGiroscopio"></td>
+
+            </tr>
+            
+           </table><br><br><br>
+
+           <div id="testoSensore"> <br><h1>Informazioni sul nostro sensore: </h1>
+            <img src="/static/img/foto_giroscopio.jpg" style="float: left; width: 20%; height: 20%;">
+               <p style="width: 58%;">Il giroscopio presente all’interno della stazione meteorologica è il 1606-MPU9250.
+                Questo tipo di sensore rileva la velocità angolare in un range di ±250, 500, 1000 e 2000°/s.<br>
+                Questo è il <a href="https://www.futurashop.it/image/catalog/data/Download/MPU-9250.pdf">link</a>
+                della scheda tecnica, nel caso si volessero ulteriori informazioni
+                riguardo il suo funzionamento e l’aspetto elettrico. </p>
+                <img src="/static/img/foto_giroscopio.jpg" style="float: right; width: 20%; height: 20%;">
+           </div>
+           <br><br>
+           <div id="divRotazione"><h1>La rotazione: </h1>
+            <p>Di seguito è riportata la posizione della telecamera in questo momento sulla stazione meteorologica, se si 
+                desidera osservare ciò che vede la telecamera selezionare l'opzione "Immagine"
+            </p>
+
+            <form style="float: right; width:auto;" >
+                <div class="radio-toolbar">
+               <input type="radio" id="rdb3D" checked name="selector" onclick="cambiaModelloImmagineGiroscopio('renderCanvas', 'imgAttuale')"><label for="rdb3D" >Modello3D</label><input type="radio" id="rdbImg"  onclick="cambiaModelloImmagineGiroscopio('imgAttuale', 'renderCanvas')" name="selector"><label for="rdbImg">Immagine</label>
+                 
+                 </div>
+            </form>
+           <canvas id="renderCanvas"></canvas>
+           <img style=" margin-left: 50%; display: none;"  id="imgAttuale" src="../../static/img/foto.jpeg">
+           
+            </div>
+        </div>
+
+
+        <!--SCRIPT PER POTER INIZIALIZZARE IL CANVAS 3D-->
+        <script>
+//NB i colori di Babylon.js sono nel formato RGB, ma vanno da 0 ad 1
+var canvas = document.getElementById("renderCanvas");
+
+var engine = null;
+var scene = null;
+var sceneToRender = null;
+var coordinate_precedenti = [ 3 * Math.PI / 4,  Math.PI/4, 4];
+
+var createDefaultEngine = function() { return new BABYLON.Engine(canvas, true, { preserveDrawingBuffer: true, stencil: true,  disableWebGL2Support: false}); };
+const createScene = () => {
+const scene = new BABYLON.Scene(engine);
+
+const camera = new BABYLON.ArcRotateCamera("Camera", 3 * Math.PI / 4, Math.PI / 4, 4, BABYLON.Vector3.Zero(), scene);
+//camera.attachControl(canvas, true);
+const light = new BABYLON.HemisphericLight("light", new BABYLON.Vector3(1, 1, 0));
+//Color: #FFFBEA
+scene.clearColor = new BABYLON.Color3(1,0.98,0.91);
+
+
+const box = BABYLON.MeshBuilder.CreateBox("box", {height: 1, width: 0.75, depth: 0.25});
+
+scene.registerAfterRender(function () {
+       var coordinate_attuali = salvaNuoveCoordinateGiroscopio()
+        box.rotate(BABYLON.Axis.X, coordinate_attuali[0]-coordinate_precedenti[0], BABYLON.Space.LOCAL);
+        box.rotate(BABYLON.Axis.Y, coordinate_attuali[1]-coordinate_precedenti[1], BABYLON.Space.LOCAL);
+        box.rotate(BABYLON.Axis.Z, coordinate_attuali[2]-coordinate_precedenti[2], BABYLON.Space.LOCAL);
+        coordinate_precedenti = coordinate_attuali;
+
+    });
+return scene;
+
+};;
+            window.initFunction = async function() {
+                
+                var asyncEngineCreation = async function() {
+                    try {
+                    return createDefaultEngine();
+                    } catch(e) {
+                    console.log("the available createEngine function failed. Creating the default engine instead");
+                    return createDefaultEngine();
+                    }
+                }
+
+                window.engine = await asyncEngineCreation();
+    if (!engine) throw 'engine should not be null.';
+    window.scene = createScene();};
+    initFunction().then(() => {sceneToRender = scene        
+        engine.runRenderLoop(function () {
+            if (sceneToRender && sceneToRender.activeCamera) {
+                sceneToRender.render();
+            }
+        });
+    });
+
+    // Resize
+    window.addEventListener("resize", function () {
+        engine.resize();
+    });
+        </script>
+        <!----------------------------------------------->
+    </body>
+</html>

@@ -1,0 +1,157 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <!-- Bootstrap CSS -->
+    <meta charset="UTF-8">
+    <link href="/static/css/bootstrap.min.css" rel="stylesheet"> <!--integrity="sha384-1BmE4kWBq78iYhFldvKuhfTAU6auU8tT94WrHftjDbrCEXSU1oBoqyl2QvZ6jIW3" crossorigin="anonymous"-->
+    <script src="/static/js/eventi.js"></script>
+    <script src="/static/js/jquery.min.js" type="text/javascript"></script>
+    <title>Stampante PCB</title>
+    <style>
+#div_sx{
+    width: 49%;
+    float: left;
+    margin-top: 1%;
+    height: auto;
+
+}
+#div_dx{
+    width: 49%;
+    height: auto;
+    float: right;
+    margin-top: 1%;
+
+}
+body{
+    font-family: 'Courier New', Courier, monospace;
+}
+#elenco_istruzioni{
+    font-family: 'Courier New', Courier, monospace;
+    width: auto;
+}
+.td_pulsante{
+    background-color:rgb(252, 246, 237);
+    font-weight: bolder;
+    border-width: thin;
+    border-color: wheat;
+}
+.td_stato{
+    background-color: grey;
+    color: rgb(80, 80, 80);
+    border-right-color: rgb(80, 80, 80);
+    border-right-width: thick;
+}
+.td_comando{
+    border: 0px white;
+    color: blueviolet;
+}
+.td_parametro{
+    border: 0px white;
+    color: tomato;
+}
+.tr_comando{
+    border-bottom-color: grey;
+    border-bottom-width: thin;
+}
+.btn_pulsanti{
+    float: left;
+    margin-left: 2%;
+    border-radius: 5%;
+    border-width: 0ch;
+    width: 8%;
+    height: auto;
+}
+.btn_tabella{
+    border-radius: 5%;
+    border-width: 0ch;
+    width: 40%;
+    height: auto;
+}
+.th_btn{
+    width: 35%;
+    height: auto;
+}
+#file_picker{
+    margin-left: 5%;
+    float: right;
+}
+
+
+    </style>
+</head>
+<body onload="main({{dati[0]}});">
+    <div id="div_sx">
+        <div id="div_pulsanti">
+            <!--
+        <input type="button" title="Esegui" onclick="eseguiComandi()" class="btn_pulsanti btn-success">
+        <input type="button" value="Pausa" onclick="pausaCodice()" class="btn_pulsanti btn-warning">
+        <input type="button" value="Termina" onclick="terminaCodice()" class="btn_pulsanti btn-danger">
+        -->
+        <button id="btn_esegui" title="Esegui codice" onclick="eseguiComandi(0)" class="btn_pulsanti btn-success"><img style="width: 50%; height: auto;" src="/static/img/esegui.png">
+        </button>
+        <button id="btn_pausa" title="Metti in pausa" onclick="pausaCodice()" class="btn_pulsanti btn-warning"><img style="width: 50%; height: auto;" src="/static/img/pausa.png">
+        </button>
+        <button id="btn_riprendi" title="Riprendi l'esecuzione" onclick="riprendiCodice()" class="btn_pulsanti btn-info"><img style="width: 50%; height: auto;" src="/static/img/riprendi.png">
+        </button>
+        <button id="btn_termina" title="Termina codice" onclick="terminaCodice()" class="btn_pulsanti btn-danger"><img style="width: 50%; height: auto;" src="/static/img/termina.png">
+        </button>
+        <button id="btn_elimina" title="Elimina il codice" onclick="eliminaTuttiComandi()" class="btn_pulsanti btn-secondary"><img style="width: 50%; height: auto;" src="/static/img/elimina.png">
+        </button>
+        <button id="btn_scarica" title="Scarica codice" onclick="scaricaComandi()" class="btn_pulsanti btn-light"><img style="width: 50%; height: auto;" src="/static/img/scarica.png">
+        </button>
+
+        <input id="file_picker" value="Carica codice" type="file" /></div><br><br>
+        <table id="elenco_istruzioni"></table>
+        
+    </div>
+
+    <div id="div_dx">
+        <div id="tbl">
+            <table class="table table-bordered" style="text-align: center;" id="tbl_posizioni_attuali">
+                <tr id="tr_posizione"></tr>
+                <tr id="tr_vai">
+                    <th colspan="2"><input id="coordx" type="text" placeholder="coord X" size="6"></th>
+                    <th colspan="2"><input id="coordy" type="text" placeholder="coord Y" size="6"></th>
+                    <th colspan="2"><input id="coordz" type="text" placeholder="coord Z" size="6"></th>
+                    <th class="th_btn">
+                        <button style="margin-right: 5%;" title="Sposta punta" onclick="spostaPunta()" class="btn_tabella btn-success"><img style="width: 20%; height: auto;" src="/static/img/esegui.png">
+                    </button><button  style="margin-left: 5%;"id="btn_setZero" title="scegli questo come 0" onclick="setZero()" class="btn_tabella btn-primary"><img style="width: 20%; height: auto;" src="/static/img/zero.png">
+                    </th>
+                </tr>
+                <tr id="tr_finecorsa"></tr>
+                
+            </table>
+        </div>
+            <canvas id="myCanvas" width="300" height="300" style="border:1px solid #2c2c2c; background-color: #FFFFF0;" >
+            Your browser does not support the HTML5 canvas tag.</canvas>
+            <table class="table" id="tipi_comando"></table>
+        </div>
+    </div>
+
+    <script src="/static/js/bootstrap.bundle.min.js"></script> <!--integrity="sha384-ka7Sk0Gln4gmtz2MlQnikT1wXgYsOg+OMhuP+IlRH9sENBO0LRn5q+8nbTov4+1p" crossorigin="anonymous"-->
+
+    <script>
+        var ws = new WebSocket("ws://{{dati[1]}}:5678/")
+            ws.onmessage = function (event) {
+                //console.log(event.data.split("#")[0]);
+                if (event.data.split("#")[0] == "numero_istruzione"){
+                    //console.log(event.data);
+                    coloraRiga(parseInt(event.data.split("#")[1]));
+                    if(parseInt(event.data.split("#")[1]) > comandi.length){
+                        document.getElementById("btn_esegui").disabled = false;
+                        document.getElementById("btn_pausa").disabled = true;
+                        document.getElementById("btn_termina").disabled = true;
+                        document.getElementById("btn_riprendi").disabled = true;
+                        document.getElementById("btn_elimina").disabled = false;
+                        termina = false;
+                    }
+                }
+                else if (event.data.split("#")[0] == "stato_assi"){
+                    aggiornaCoordinate(event.data.split("#")[1])
+                    aggiornaFinecorsa(event.data.split("#")[2])
+                }
+                
+            };
+    </script>
+</body>
+</html>

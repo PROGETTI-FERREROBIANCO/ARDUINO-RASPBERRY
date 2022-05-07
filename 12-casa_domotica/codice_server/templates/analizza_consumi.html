@@ -1,0 +1,552 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Gestione Casa | Analizza consumi</title>
+
+  <!-- Google Font: Source Sans Pro -->
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Source+Sans+Pro:300,400,400i,700&display=fallback">
+  <!-- Font Awesome -->
+  <link rel="stylesheet" href="/static/plugins/fontawesome-free/css/all.min.css">
+  <!-- Ionicons -->
+  <link rel="stylesheet" href="https://code.ionicframework.com/ionicons/2.0.1/css/ionicons.min.css">
+  <!-- Tempusdominus Bootstrap 4 -->
+  <link rel="stylesheet" href="/static/plugins/tempusdominus-bootstrap-4/css/tempusdominus-bootstrap-4.min.css">
+  <!-- iCheck -->
+  <link rel="stylesheet" href="/static/plugins/icheck-bootstrap/icheck-bootstrap.min.css">
+  <!-- JQVMap -->
+  <link rel="stylesheet" href="/static/plugins/jqvmap/jqvmap.min.css">
+  <!-- Theme style -->
+  <link rel="stylesheet" href="/static/dist/css/adminlte.min.css">
+  <!-- overlayScrollbars -->
+  <link rel="stylesheet" href="/static/plugins/overlayScrollbars/css/OverlayScrollbars.min.css">
+  <!-- Daterange picker -->
+  <link rel="stylesheet" href="/static/plugins/daterangepicker/daterangepicker.css">
+  <!-- summernote -->
+  <link rel="stylesheet" href="/static/plugins/summernote/summernote-bs4.min.css">
+  <link rel="stylesheet" href="https://fonts.googleapis.com/icon?family=Material+Icons">
+
+  <link href="/static/css/main_calendario.css" rel="stylesheet" />
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Montserrat+Alternates:ital,wght@0,400;1,700&display=swap" rel="stylesheet">
+   <style> 
+   body{
+      font-family: 'Montserrat Alternates', sans-serif;
+      background-color: rgb(249, 246, 246);
+    }
+    </style>
+</head>
+<body onload="getDate();conferma();">
+  <script>
+    var stato_attuale = 1;
+    var max_dati = 25;
+    var dati_consumo = [];
+  </script>
+
+  <nav style="justify-content: unset;" class=" navbar navbar-expand navbar-white navbar-light" >
+    <!-- Left navbar links -->
+    <ul class="navbar-nav">
+      <li class="nav-item menu-open">
+        <a href="/" class="nav-link active" title="Home">
+          <i class="nav-icon fas fa-home"></i>
+        </a>
+      </li>
+
+      <li class="nav-item dropdown">
+        <div class="text-right">
+        <a class="nav-link" data-toggle="dropdown" href="#">
+          <i class="fas fa-user-cog mr-2" title="Impostazioni account"></i>             
+        </a>
+        <div class="dropdown-menu dropdown-menu-lg dropdown-menu-right">
+          <span class="dropdown-item dropdown-header bg-info" style=" opacity: 0.4 !important;">Benvenuto {{utente}}</span>
+          <div class="dropdown-divider"></div>
+          
+          
+          <a href="/cambia_password" class="dropdown-item">
+            <i class="fa fa-key mr-2"></i>Cambia password
+
+          </a>
+          <div class="dropdown-divider"></div>
+          <a href="/cambia_nome" class="dropdown-item">
+            <i class="fa fa-file mr-2"></i>Cambia nome utente
+
+          </a><div class="dropdown-divider"></div>
+          
+          {% if opzione_admin %}
+            {{opzione_admin | safe}}
+          {% endif %}
+          <div class="dropdown-divider"></div>
+          <a href="/logout" class="dropdown-item">
+            <i class="ion ion-log-out fas fa-envelope mr-2"></i>Logout
+          </a>       
+        
+        </div>
+      </li>
+      <li>
+        <button type="button"  onclick="window.location.href = '/download?id_stanza={{id_stanza}}&id_dispositivo=all'" class="btn btn-secondary btn-block" title="Scarica dati">
+          <i class="fa fa-download"></i></button>
+      </li>
+    </ul>
+    </nav>
+  <!-- Main Sidebar Container -->
+
+
+  <!-- Content Wrapper. Contains page content -->
+  <div class="">
+
+    {% if error %}
+	<svg xmlns="http://www.w3.org/2000/svg" style="display: none;">
+		<symbol id="exclamation-triangle-fill" fill="currentColor" viewBox="0 0 16 16">
+		<path d="M8.982 1.566a1.13 1.13 0 0 0-1.96 0L.165 13.233c-.457.778.091 1.767.98 1.767h13.713c.889 0 1.438-.99.98-1.767L8.982 1.566zM8 5c.535 0 .954.462.9.995l-.35 3.507a.552.552 0 0 1-1.1 0L7.1 5.995A.905.905 0 0 1 8 5zm.002 6a1 1 0 1 1 0 2 1 1 0 0 1 0-2z"/>
+		</symbol>
+	</svg>
+	<div class="alert alert-danger d-flex align-items-center" role="alert">
+		<svg class="bi flex-shrink-0 me-2" width="24" height="24" role="img" aria-label="Danger:"><use xlink:href="#exclamation-triangle-fill"/></svg>	  
+      <div>
+        {{error | safe}}
+      </div>
+    </div>
+  {% endif %}
+
+  {% if errore_2 %}
+      {{errore_2 | safe}}
+  {% else %}
+  
+    <!-- Content Header (Page header) -->
+    <div class="content-header">
+      <div class="container-fluid">
+        <div class="row mb-2">
+          <div class="col-sm-6">
+            <h1 class="m-0">{{nome}}</h1>
+          </div><!-- /.col -->
+        </div><!-- /.row -->
+      </div><!-- /.container-fluid -->
+    </div>
+    <!-- /.content-header -->
+
+    <div>
+        <div class="container my-3 col-md-5 col-sm-6 col-12"><div class="col-lg-12 text-center info-box bg-dark" id="id_div_col">          
+          <button type="button" onclick="spegni_tutto();" class="btn px-3 bg-warning" id="id_div_col_opp"><i class="far fa-lightbulb" aria-hidden="true"></i></button>
+          <div class="info-box-content"><span class="info-box-text text-center"><h5 id="testo_pul">Spegni tutto</h5></span></div></div></div>
+
+          <script>
+            function spegni_tutto(){
+              $.post("/analizza_consumi?id_stanza={{id_stanza}}",
+              {
+                tipo_post: "spegni_tutto",
+                stato_attuale: stato_attuale
+              },
+              function(data, status){
+                //alert("Data: " + data + "\nStatus: " + status);
+              });
+            }
+          </script>
+    </div>
+
+    <!-- Main content -->
+    <br><h4 class="text-center"><b><u>Consumi dei dispositivi</u></b></h4>
+    <div class="container-fluid">
+      <div class="row">
+        <div class="col-12">
+          <!-- interactive chart -->
+          <h3 class="card-title text-warning">
+            <i class="far fa-chart-bar"></i>
+            <b>Dati in tempo reale</b>
+          </h3><br>
+          <div class="card card-warning card-outline">
+            <div class="card-header">
+              
+
+              <div class="card-tools">
+                Numero di dati da visualizzare: 
+                <select class="form-select select2-light" onchange="cambiaRangeValori()" id="opzione_numero_dati" >
+                  <option value="5">5</option>
+                  <option value="10">10</option>
+                  <option value="25" selected>25</option>
+                  <option value="50">50</option>
+                  <option value='100'>100</option>
+                  <option value="150">150</option>
+                  <option value="250">250</option>
+                  <option value="500">500</option>
+                </select>
+              </div>
+            </div>
+            <div class="card-body">
+              <div id="interactive" style="height:200px;"></div>
+            </div>
+            <!-- /.card-body-->
+          </div>
+          <!-- /.card -->
+
+        </div>
+        <!-- /.col -->
+      </div>
+    </div><hr>
+
+    <div class="s001">
+      <div class="col-12"><h3 class="card-title text-info">
+            <i class="far fa-chart-bar"></i>
+            <b>Dati del dispositivo</b>
+          </h3></div><br>
+        <div class="inner-form row mb-2">
+         
+          <div class="input-group input-group-lg col-sm-6 col-12">
+            <span class="input-group-text bg-info" id="inputGroup-sizing-lg">
+              <i class="far fa-calendar"></i>
+            </span>
+            <input class="datepicker form-control" id="data1" name="data1" type="text">
+          </div>
+          <div class="input-group input-group-lg col-sm-6 col-12">
+            <span class="input-group-text bg-info" id="inputGroup-sizing-lg">
+              <i class="far fa-calendar"></i>
+            </span>
+            <input class="datepicker form-control" id="data2" name="data1" type="text">
+          </div>          
+          <div class="container my-3">
+            <div class="col-lg-12 text-center">
+                <button type="button" onclick="conferma();" class="btn btn-outline-info">Conferma</button>
+            </div>
+        </div>         
+        </div>
+    </div>
+    <div class="row">
+      <div class="col-12">
+        <!-- line chart -->
+        <div class="card card-info card-outline">
+          <div class="card-header" id="header_line_chart">
+          </div>
+          <div class="card-body">
+            <canvas id="line-chart" style="height:200px;"></canvas>
+          </div>
+          <!-- /.card-body-->
+        </div>
+        <!-- /.card -->
+
+      </div></div>
+      <div class="row">
+        <div class="col-12">
+          <!-- line chart -->
+          <div class="card card-danger card-outline">
+            <div class="card-header">
+            </div>
+            <div class="card-body">
+              <canvas id="donut-chart" style="height:200px;"></canvas>
+            </div>
+            <!-- /.card-body-->
+          </div>
+          <!-- /.card -->
+  
+        </div></div>
+
+    <script>
+      function conferma(){
+        $.get("/download",
+        {
+          id_stanza: '{{id_stanza}}',
+          id_dispositivo: "all",
+          da: document.getElementById("data1").value,
+          a: document.getElementById("data2").value
+        },
+        function(data, status){
+          // conversione
+          //console.log(data)
+          document.getElementById("header_line_chart").innerHTML = "Dati dal <b>"+document.getElementById("data1").value+"</b> al <b>"+document.getElementById("data2").value+"</b>";
+
+          var somma_consumi_LC = {};
+          var indice_totale = 1
+          var descrizione_indice = 6;
+          var nome_stanze = []; //indice = id_dispositivo/id_stanza -1
+          var singoli_consumi_LC = {};
+          var singoli_consumi_DC = []; //indice = id_dispositivo/id_stanza -1
+          var consumi_totali_DC = 0;
+          if('{{id_stanza}}' == "all"){
+              indice_totale = 4;
+              descrizione_indice = 5;
+          }
+          console.log(data) 
+          for(let i=0; i<Object.keys(data[0]).length; i++){
+            consumi_totali_DC += data[3][i];
+            if (singoli_consumi_DC[data[indice_totale][i]-1] !== undefined){
+              singoli_consumi_DC[data[indice_totale][i]-1] +=data[3][i];
+            }
+            else singoli_consumi_DC[data[indice_totale][i]-1] = data[3][i];
+
+            if(typeof somma_consumi_LC[data[2][i]] === 'undefined'){
+              somma_consumi_LC[data[2][i]] = data[3][i];
+            }
+            else{
+              somma_consumi_LC[data[2][i]] += data[3][i];
+            }
+            
+            if(singoli_consumi_LC.hasOwnProperty(data[indice_totale][i])){
+              if(singoli_consumi_LC[data[indice_totale][i]].hasOwnProperty(data[2][i])){
+                singoli_consumi_LC[data[indice_totale][i]][data[2][i]] +=data[3][i];
+              }
+              else singoli_consumi_LC[data[indice_totale][i]][data[2][i]] =data[3][i];
+            }
+            else{
+              nome_stanze[data[indice_totale][i]-1] = data[descrizione_indice][i]; 
+              singoli_consumi_LC[data[indice_totale][i]] = {};
+              singoli_consumi_LC[data[indice_totale][i]][data[2][i]] = data[3][i];
+            }
+          }
+          console.log(singoli_consumi_LC)
+
+          //console.log(somma_consumi_LC);
+
+
+          var dati_consumi_LC = [];
+          var date_consumi_LC = [];
+          
+          var a = 0;
+          for (const [key, value] of Object.entries(somma_consumi_LC)) {
+            dati_consumi_LC.push(value);
+            date_consumi_LC.push(key);
+            a ++;
+            //console.log(key, value);
+          }
+
+          //console.log(dati_consumi_LC);
+          //console.log(date_consumi_LC);
+          var dati_totali = [];
+          var colori = [ '#E76F51', '#E9C46A', '#2A9D8F', '#F4A261', '#a1c181', '#0fa3b1', '#5c8001', '#720026', "#70d6ff", "#985277", "#772f1a", "#9d4edd", "#96897b", "#080357", "#f42b03"] //rosa, giallo, verde, rosa chiaro
+          for (const [key, value] of Object.entries(singoli_consumi_LC)){
+            var arr_temporaneo = [];
+            for (const [k, v] of Object.entries(value)){
+              arr_temporaneo.push(v);
+            }
+              dati_totali.push({
+                label               : nome_stanze[key-1],
+                backgroundColor     : colori[key-1],
+                borderColor         : colori[key-1],
+                fill                : false,
+                pointRadius         : true,
+                pointBorderWidth    : 5,
+                data                :  arr_temporaneo
+              });
+          }
+          dati_totali.push(
+            {
+              label               : 'Dati totali',
+              backgroundColor     : '#264653',
+              borderColor         : '#264653',
+              pointRadius         : true,
+              fill                : false,
+              pointBorderWidth    : 5,
+              data                : dati_consumi_LC
+            });
+          console.log(dati_consumi_LC)
+          disegnaGraficaLC(dati_totali, date_consumi_LC);
+          disegnaGraficoDC(nome_stanze, singoli_consumi_DC.map(x => x/consumi_totali_DC*100), colori)
+
+          //disegnaGraficoLC(dati_consumi_LC, date_consumi_LC)
+          
+        });
+
+      }
+
+    function disegnaGraficaLC(dati_totali, data_ora){
+
+      var areaChartData = {
+        labels: data_ora,
+        datasets: dati_totali,
+      }
+
+      var areaChartOptions = {
+        maintainAspectRatio : false,
+        responsive : true,
+        legend: {
+          display: true
+        },
+        scales: {
+          xAxes: [{
+               ticks: {
+                   display: false
+              }
+           }],
+          yAxes: [{
+            gridLines : {
+              display : false,
+            }
+          }]
+        }
+      }
+
+      //-------------
+      //- LINE CHART -
+      //--------------
+      var lineChartCanvas = $('#line-chart').get(0).getContext('2d')
+      var lineChartOptions = $.extend(true, {}, areaChartOptions)
+      var lineChartData = $.extend(true, {}, areaChartData)
+      //lineChartData.datasets[0].fill = false;
+      //lineChartData.datasets[1].fill = false;
+      lineChartOptions.datasetFill = false
+
+      var lineChart = new Chart(lineChartCanvas, {
+        type: 'line',
+        data: lineChartData,
+        options: lineChartOptions
+      })
+      }
+
+      function disegnaGraficoDC(etichette, dati, colori){
+        var donutChartCanvas = $('#donut-chart').get(0).getContext('2d')
+        var donutData        = {
+          labels: etichette,
+          datasets: [
+            {
+              data: dati,
+              backgroundColor : colori,
+            }
+          ]
+        }
+        var donutOptions     = {
+          maintainAspectRatio : false,
+          responsive : true,
+        }
+        //Create pie or douhnut chart
+        // You can switch between pie and douhnut using the method below.
+        new Chart(donutChartCanvas, {
+          type: 'doughnut',
+          data: donutData,
+          options: donutOptions
+        })
+      }
+
+    </script>
+   
+    <!-- /.content -->
+  </div>
+  {% endif %}
+  <!-- /.content-wrapper -->
+
+  <!-- Control Sidebar -->
+  <aside class="control-sidebar control-sidebar-dark">
+    <!-- Control sidebar content goes here -->
+  </aside>
+  <!-- /.control-sidebar -->
+</div>
+<!-- ./wrapper -->
+
+
+<script src="/static/js/extention/choices.js"></script>
+    <script src="/static/js/extention/flatpickr.js"></script>
+    <script>
+      flatpickr(".datepicker",
+      {});
+
+    </script>
+    <script>
+      const choices = new Choices('[data-trigger]',
+      {
+        searchEnabled: false,
+        itemSelectText: '',
+      });
+
+    </script>
+<!-- jQuery -->
+<script src="/static/plugins/jquery/jquery.min.js"></script>
+<!-- jQuery UI 1.11.4 -->
+<script src="/static/plugins/jquery-ui/jquery-ui.min.js"></script>
+<!-- Resolve conflict in jQuery UI tooltip with Bootstrap tooltip -->
+<script>
+  $.widget.bridge('uibutton', $.ui.button)
+</script>
+<!-- Bootstrap 4 -->
+<script src="/static/plugins/bootstrap/js/bootstrap.bundle.min.js"></script>
+<!-- ChartJS -->
+<script src="/static/plugins/chart.js/Chart.min.js"></script>
+<!-- FLOT CHARTS -->
+<script src="/static/plugins/flot/jquery.flot.js"></script>
+<script src="/static/plugins/flot/plugins/jquery.flot.resize.js"></script>
+<!-- Sparkline -->
+<script src="/static/plugins/sparklines/sparkline.js"></script>
+<!-- Tempusdominus Bootstrap 4 -->
+<script src="/static/plugins/tempusdominus-bootstrap-4/js/tempusdominus-bootstrap-4.min.js"></script>
+<!-- Summernote -->
+<script src="/static/plugins/summernote/summernote-bs4.min.js"></script>
+<!-- overlayScrollbars -->
+<script src="/static/plugins/overlayScrollbars/js/jquery.overlayScrollbars.min.js"></script>
+<!-- AdminLTE App -->
+<script src="/static/dist/js/adminlte.js"></script>
+<!-- AdminLTE for demo purposes -->
+
+
+<script>
+  var ws = new WebSocket("ws://{{ip}}:{{porta}}/")
+      ws.onmessage = function (event) {
+          //console.log(event.data.split("#")[0]);
+          console.log("WEB SOCKET DATA")
+
+          // event.data
+          if (event.data.split("#")[0] == "consumi"){
+            var consumi = event.data.split("#")[1];
+            var consumi_lista = eval(consumi);
+
+            let sum = 0;
+
+            for (let i = 0; i < consumi_lista.length; i++) {
+                sum += consumi_lista[i];
+            }
+
+            // dati_consumo
+            dati_consumo.push(parseFloat(sum))
+            //console.log(dati_consumo)
+            if(dati_consumo.length > max_dati){
+              dati_consumo = dati_consumo.slice(dati_consumo.length-max_dati)
+            }
+            disegna_grafico_RT()
+          }
+          
+      };
+</script>
+<script>
+  function getDate(){
+    var today = new Date();
+    var dd  = today.getFullYear() + '-' + ('0' + (today.getMonth() + 1)).slice(-2) + '-' + ('0' + today.getDate()).slice(-2);   
+    document.getElementById("data1").value = dd;
+    document.getElementById("data2").value = dd;
+    }
+  function cambiaRangeValori(){
+    max_dati = parseInt(document.getElementById("opzione_numero_dati").value)
+  }
+  function adattaDati(){
+    dati = []
+    for(let a = 0; a < max_dati; a++){
+      dati.push([a,dati_consumo[a]]);
+    }
+    return dati;
+  }
+  function disegna_grafico_RT(){
+      var interactive_plot = $.plot('#interactive', [
+        {
+          data: adattaDati(),
+        }
+      ],
+      {
+        grid: {
+          borderColor: '#f3f3f3',
+          borderWidth: 1,
+          tickColor: '#f3f3f3'
+        },
+        series: {
+          color: '#F4A261',
+          lines: {
+            lineWidth: 2  ,
+            show: true,
+            fill: true,
+          }
+        },
+        yaxis: {
+          show: true
+        },
+        xaxis: {
+          show: false
+        }
+      }
+    )}
+</script>
+</body>
+</html>

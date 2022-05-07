@@ -1,0 +1,8 @@
+2022-04-21 16:17:02.823953: error send email
+2022-04-21 16:17:10.008921: error send email
+2022-04-21 16:17:56.783504: error send email
+2022-04-21 16:30:51.120036: error send email
+2022-04-21 16:32:21.227215: error send email
+2022-04-21 16:34:53.913418: error send email
+2022-04-21 16:44:50.988873: error send email
+2022-04-21 16:45:21.126159: Errore database
