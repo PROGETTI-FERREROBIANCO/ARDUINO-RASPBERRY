@@ -99,6 +99,7 @@ dbname = 'casa'
 
 
 arduino = serial.Serial('/dev/ttyACM0',9600)
+sleep(5)
 lock_arduino = thr.Lock()
 
 app = Flask(__name__)
@@ -1002,7 +1003,9 @@ def sendMessage(IO, dato1, dato2):
     except:
       try: arduino.close()
       except: pass
-      try: arduino = serial.Serial('/dev/ttyACM0',9600)
+      try:
+        arduino = serial.Serial('/dev/ttyACM0',9600)
+        sleep(5)
       except: pass
 
       telegram_bot_sendtext("Errore arduino")
