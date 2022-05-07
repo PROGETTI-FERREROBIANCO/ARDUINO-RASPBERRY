@@ -457,7 +457,7 @@ def download():
 
         if id_stanza == "all":
           dati=[da, al]
-          query = "SELECT consumi.id, consumi.id_dispositivo, consumi.data_ora, consumi.consumo, stanze.id, stanze.nome, dispositivi.nome FROM consumi,stanze,dispositivi WHERE consumi.data_ora >= %s AND consumi.data_ora <= %s AND consumi.id_dispositivo = dispositivi.id AND dispositivi.id_stanza = stanze.id AND consumo != 9999.9"
+          query = "SELECT consumi.id, consumi.id_dispositivo, consumi.data_ora, consumi.consumo, stanze.id, stanze.nome, dispositivi.nome FROM consumi,stanze,dispositivi WHERE consumi.data_ora >= %s AND consumi.data_ora <= %s AND consumi.id_dispositivo = dispositivi.id AND dispositivi.id_stanza = stanze.id AND consumi.consumo != 9999.9"
           
         else:
           if "id_dispositivo" in request.args:
@@ -465,16 +465,16 @@ def download():
             id_dispositivo = request.args["id_dispositivo"]
 
             if id_dispositivo == "all":
-              query = "SELECT consumi.id, consumi.id_dispositivo, consumi.data_ora, consumi.consumo, stanze.id, stanze.nome, dispositivi.nome FROM consumi,stanze,dispositivi WHERE consumi.data_ora >= %s AND consumi.data_ora <= %s AND consumi.id_dispositivo = dispositivi.id AND dispositivi.id_stanza = stanze.id AND stanze.id = %s AND consumo != 9999.9"
+              query = "SELECT consumi.id, consumi.id_dispositivo, consumi.data_ora, consumi.consumo, stanze.id, stanze.nome, dispositivi.nome FROM consumi,stanze,dispositivi WHERE consumi.data_ora >= %s AND consumi.data_ora <= %s AND consumi.id_dispositivo = dispositivi.id AND dispositivi.id_stanza = stanze.id AND stanze.id = %s AND consumi.consumo != 9999.9"
               dati.append(int(id_stanza))
             else:
-              query = "SELECT consumi.id, consumi.id_dispositivo, consumi.data_ora, consumi.consumo, stanze.id, stanze.nome, dispositivi.nome FROM consumi, stanze, dispositivi WHERE consumi.data_ora >= %s AND consumi.data_ora <= %s AND consumi.id_dispositivo = %s AND consumi.id_dispositivo = dispositivi.id AND dispositivi.id_stanza = stanze.id  AND stanze.id = %s AND consumo != 9999.9"
+              query = "SELECT consumi.id, consumi.id_dispositivo, consumi.data_ora, consumi.consumo, stanze.id, stanze.nome, dispositivi.nome FROM consumi, stanze, dispositivi WHERE consumi.data_ora >= %s AND consumi.data_ora <= %s AND consumi.id_dispositivo = %s AND consumi.id_dispositivo = dispositivi.id AND dispositivi.id_stanza = stanze.id  AND stanze.id = %s AND consumi.consumo != 9999.9"
               dati.append(int(id_dispositivo))
               dati.append(int(id_stanza))
       else:
 
         if id_stanza == "all":
-            query = "SELECT consumi.id, consumi.id_dispositivo, consumi.data_ora, consumi.consumo, stanze.id, stanze.nome, dispositivi.nome FROM consumi,stanze,dispositivi WHERE consumi.id_dispositivo = dispositivi.id AND dispositivi.id_stanza = stanze.id AND consumo != 9999.9"
+            query = "SELECT consumi.id, consumi.id_dispositivo, consumi.data_ora, consumi.consumo, stanze.id, stanze.nome, dispositivi.nome FROM consumi,stanze,dispositivi WHERE consumi.id_dispositivo = dispositivi.id AND dispositivi.id_stanza = stanze.id AND consumi.consumo != 9999.9"
             dati = None
             
         else:
@@ -482,10 +482,10 @@ def download():
             id_dispositivo = request.args["id_dispositivo"]
 
             if id_dispositivo == "all":
-              query = "SELECT consumi.id, consumi.id_dispositivo, consumi.data_ora, consumi.consumo, stanze.id, stanze.nome, dispositivi.nome FROM consumi,stanze,dispositivi WHERE consumi.id_dispositivo = dispositivi.id AND dispositivi.id_stanza = stanze.id AND stanze.id = %s AND consumo != 9999.9"
+              query = "SELECT consumi.id, consumi.id_dispositivo, consumi.data_ora, consumi.consumo, stanze.id, stanze.nome, dispositivi.nome FROM consumi,stanze,dispositivi WHERE consumi.id_dispositivo = dispositivi.id AND dispositivi.id_stanza = stanze.id AND stanze.id = %s AND consumi.consumo != 9999.9"
               dati = [int(id_stanza)]
             else:
-              query = "SELECT consumi.id, consumi.id_dispositivo, consumi.data_ora, consumi.consumo, stanze.id, stanze.nome, dispositivi.nome FROM consumi,stanze,dispositivi WHERE consumi.id_dispositivo = %s AND consumi.id_dispositivo = dispositivi.id AND dispositivi.id_stanza = stanze.id AND stanze.id = %s AND consumo != 9999.9"
+              query = "SELECT consumi.id, consumi.id_dispositivo, consumi.data_ora, consumi.consumo, stanze.id, stanze.nome, dispositivi.nome FROM consumi,stanze,dispositivi WHERE consumi.id_dispositivo = %s AND consumi.id_dispositivo = dispositivi.id AND dispositivi.id_stanza = stanze.id AND stanze.id = %s AND consumi.consumo != 9999.9"
               dati = [int(id_dispositivo), int(id_stanza)]
 
       #print(query)
