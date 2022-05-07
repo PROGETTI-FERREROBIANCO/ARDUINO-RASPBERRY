@@ -97,6 +97,7 @@ dbusername = '...'
 dbpassword = '...'
 dbname = 'casa'
 
+
 arduino = serial.Serial('/dev/ttyACM0',9600)
 lock_arduino = thr.Lock()
 
@@ -405,7 +406,7 @@ def analizza_consumi():
       if request.form["tipo_post"] == "spegni_tutto":
         for id_dis in id_dispositivi:
           consumo, _, _, errore3, errore_db_2, zero_dispositivo = get_informazioni_dispositivo(id_dis)
-          if errore3 == "OK" and errore_db_2 == "OK":
+          if errore3 == "OK" and errore_db_2 == "OK" and consumo != 9999.9:
             if consumo-zero_dispositivo > 0:
               cambia_stato("1", id_dis, session["user_id"])
         return "spegnimento avvenuto con successo"
@@ -455,7 +456,7 @@ def download():
 
         if id_stanza == "all":
           dati=[da, al]
-          query = "SELECT consumi.id, consumi.id_dispositivo, consumi.data_ora, consumi.consumo, stanze.id, stanze.nome, dispositivi.nome FROM consumi,stanze,dispositivi WHERE consumi.data_ora >= %s AND consumi.data_ora <= %s AND consumi.id_dispositivo = dispositivi.id AND dispositivi.id_stanza = stanze.id"
+          query = "SELECT consumi.id, consumi.id_dispositivo, consumi.data_ora, consumi.consumo, stanze.id, stanze.nome, dispositivi.nome FROM consumi,stanze,dispositivi WHERE consumi.data_ora >= %s AND consumi.data_ora <= %s AND consumi.id_dispositivo = dispositivi.id AND dispositivi.id_stanza = stanze.id AND consumo != 9999.9"
           
         else:
           if "id_dispositivo" in request.args:
@@ -463,16 +464,16 @@ def download():
             id_dispositivo = request.args["id_dispositivo"]
 
             if id_dispositivo == "all":
-              query = "SELECT consumi.id, consumi.id_dispositivo, consumi.data_ora, consumi.consumo, stanze.id, stanze.nome, dispositivi.nome FROM consumi,stanze,dispositivi WHERE consumi.data_ora >= %s AND consumi.data_ora <= %s AND consumi.id_dispositivo = dispositivi.id AND dispositivi.id_stanza = stanze.id AND stanze.id = %s"
+              query = "SELECT consumi.id, consumi.id_dispositivo, consumi.data_ora, consumi.consumo, stanze.id, stanze.nome, dispositivi.nome FROM consumi,stanze,dispositivi WHERE consumi.data_ora >= %s AND consumi.data_ora <= %s AND consumi.id_dispositivo = dispositivi.id AND dispositivi.id_stanza = stanze.id AND stanze.id = %s AND consumo != 9999.9"
               dati.append(int(id_stanza))
             else:
-              query = "SELECT consumi.id, consumi.id_dispositivo, consumi.data_ora, consumi.consumo, stanze.id, stanze.nome, dispositivi.nome FROM consumi, stanze, dispositivi WHERE consumi.data_ora >= %s AND consumi.data_ora <= %s AND consumi.id_dispositivo = %s AND consumi.id_dispositivo = dispositivi.id AND dispositivi.id_stanza = stanze.id  AND stanze.id = %s"
+              query = "SELECT consumi.id, consumi.id_dispositivo, consumi.data_ora, consumi.consumo, stanze.id, stanze.nome, dispositivi.nome FROM consumi, stanze, dispositivi WHERE consumi.data_ora >= %s AND consumi.data_ora <= %s AND consumi.id_dispositivo = %s AND consumi.id_dispositivo = dispositivi.id AND dispositivi.id_stanza = stanze.id  AND stanze.id = %s AND consumo != 9999.9"
               dati.append(int(id_dispositivo))
               dati.append(int(id_stanza))
       else:
 
         if id_stanza == "all":
-            query = "SELECT consumi.id, consumi.id_dispositivo, consumi.data_ora, consumi.consumo, stanze.id, stanze.nome, dispositivi.nome FROM consumi,stanze,dispositivi WHERE consumi.id_dispositivo = dispositivi.id AND dispositivi.id_stanza = stanze.id"
+            query = "SELECT consumi.id, consumi.id_dispositivo, consumi.data_ora, consumi.consumo, stanze.id, stanze.nome, dispositivi.nome FROM consumi,stanze,dispositivi WHERE consumi.id_dispositivo = dispositivi.id AND dispositivi.id_stanza = stanze.id AND consumo != 9999.9"
             dati = None
             
         else:
@@ -480,10 +481,10 @@ def download():
             id_dispositivo = request.args["id_dispositivo"]
 
             if id_dispositivo == "all":
-              query = "SELECT consumi.id, consumi.id_dispositivo, consumi.data_ora, consumi.consumo, stanze.id, stanze.nome, dispositivi.nome FROM consumi,stanze,dispositivi WHERE consumi.id_dispositivo = dispositivi.id AND dispositivi.id_stanza = stanze.id AND stanze.id = %s"
+              query = "SELECT consumi.id, consumi.id_dispositivo, consumi.data_ora, consumi.consumo, stanze.id, stanze.nome, dispositivi.nome FROM consumi,stanze,dispositivi WHERE consumi.id_dispositivo = dispositivi.id AND dispositivi.id_stanza = stanze.id AND stanze.id = %s AND consumo != 9999.9"
               dati = [int(id_stanza)]
             else:
-              query = "SELECT consumi.id, consumi.id_dispositivo, consumi.data_ora, consumi.consumo, stanze.id, stanze.nome, dispositivi.nome FROM consumi,stanze,dispositivi WHERE consumi.id_dispositivo = %s AND consumi.id_dispositivo = dispositivi.id AND dispositivi.id_stanza = stanze.id AND stanze.id = %s"
+              query = "SELECT consumi.id, consumi.id_dispositivo, consumi.data_ora, consumi.consumo, stanze.id, stanze.nome, dispositivi.nome FROM consumi,stanze,dispositivi WHERE consumi.id_dispositivo = %s AND consumi.id_dispositivo = dispositivi.id AND dispositivi.id_stanza = stanze.id AND stanze.id = %s AND consumo != 9999.9"
               dati = [int(id_dispositivo), int(id_stanza)]
 
       #print(query)
@@ -779,6 +780,7 @@ def cambia_stato(stato_attuale, id_dispositivo, id_utente):
     cur = con.cursor()
     cur.execute("SELECT * FROM dispositivi WHERE id = %s", [id_dispositivo])
     info_dispositivo = cur.fetchall()
+    con.close()
     
     if len(info_dispositivo) > 0:
       info_dispositivo = info_dispositivo[0]
@@ -787,22 +789,34 @@ def cambia_stato(stato_attuale, id_dispositivo, id_utente):
         if stato_attuale == "1": sendMessage("OUTPUT", pinout, "0")
         else: sendMessage("OUTPUT", pinout, "1")
 
-        data_ora = str(datetime.datetime.now()).split('.')[0]
+        salva_log_comandi(id_utente, f'accensione/spegnimento dispositivo n. {id_dispositivo}')
 
-        cur.execute("INSERT INTO log_comandi (id_utente, data_ora_comando, descrizione) VALUES (%s, %s, %s)", [id_utente, data_ora, f'accensione/spegnimento dispositivo n. {id_dispositivo}'])
-        con.commit()
       except: errore = "Problema con il cambiamento dello stato!"
     
     else:
       errore = "Dispositivo non presente sul database"
       
-    con.close()
 
   except: 
     errore_db = "Errore database"
     try: con.close()
     except: pass
   return errore, errore_db
+
+
+
+def salva_log_comandi(id_utente, messaggio):
+  try:
+    data_ora = str(datetime.datetime.now()).split('.')[0]
+
+    con = pymysql.connect(host=hostname,user=dbusername,db=dbname,password=dbpassword)
+    cur = con.cursor()
+    cur.execute("INSERT INTO log_comandi (id_utente, data_ora_comando, descrizione) VALUES (%s, %s, %s)", [id_utente, data_ora, messaggio])
+    con.commit()
+    con.close()
+  except:
+    try: con.close()
+    except:pass
 
 
 def cambia_nome_utente(id_utente, nuovo_nome_utente):
@@ -813,14 +827,10 @@ def cambia_nome_utente(id_utente, nuovo_nome_utente):
     cur = con.cursor()
     cur.execute("UPDATE utenti SET username = %s WHERE id = %s", [nuovo_nome_utente, id_utente])
     con.commit()
-
-    data_ora = str(datetime.datetime.now()).split('.')[0]
-
-    cur.execute("INSERT INTO log_comandi (id_utente, data_ora_comando, descrizione) VALUES (%s, %s, %s)", [id_utente, data_ora, f'cambio il nome utente n. {id_utente}'])
-    con.commit()
-
     con.close()
-    
+
+    salva_log_comandi(id_utente, f'cambio il nome utente n. {id_utente}')
+     
 
   except: 
     try: con.close()
@@ -837,13 +847,9 @@ def cambia_password_utente(id_utente, nuova_password_utente):
     cur = con.cursor()
     cur.execute("UPDATE utenti SET password = %s WHERE id = %s", [nuova_password_utente, id_utente])
     con.commit()
-
-    data_ora = str(datetime.datetime.now()).split('.')[0]
-
-    cur.execute("INSERT INTO log_comandi (id_utente, data_ora_comando, descrizione) VALUES (%s, %s, %s)", [id_utente, data_ora, f'cambio la password utente n. {id_utente}'])
-    con.commit()
-
     con.close()
+
+    salva_log_comandi(id_utente, f'cambio la password utente n. {id_utente}')    
 
   except: 
     try: con.close()
@@ -994,8 +1000,17 @@ def sendMessage(IO, dato1, dato2):
       else:
         return None
     except:
+      try: arduino.close()
+      except: pass
       try: arduino = serial.Serial('/dev/ttyACM0',9600)
       except: pass
+
+      telegram_bot_sendtext("Errore arduino")
+      
+      if IO == "INPUT":
+        return 9999.9
+      else:
+        return None
 
 
 def extract_ip():
@@ -1035,7 +1050,7 @@ class MyWsServerDispositivo(thr.Thread):
           #che viene gestita usendo dal while true
           try:
             consumo, _, _, errore, errore_db, zero_dispositivo = get_informazioni_dispositivo(self.id_dispositivo)
-            if errore == "OK" and errore_db == "OK":
+            if errore == "OK" and errore_db == "OK" and consumo != 9999.9:
               if consumo-zero_dispositivo > 0:
                 await websocket.send(f"stato#ON#consumo#{consumo}")
               else: await websocket.send(f"stato#OFF#consumo#{consumo}")
@@ -1069,7 +1084,7 @@ class MyWsServerAnalizzaConsumi(thr.Thread):
             consumi =[]
             for id_dispositivo in self.lista_dispositivi:
               consumo, _, _, errore, errore_db, _ = get_informazioni_dispositivo(id_dispositivo)
-              if errore == "OK" and errore_db == "OK":
+              if errore == "OK" and errore_db == "OK" and consumo != 9999.9:
                 consumi.append(consumo)
 
             await websocket.send(f"consumi#{consumi}")
