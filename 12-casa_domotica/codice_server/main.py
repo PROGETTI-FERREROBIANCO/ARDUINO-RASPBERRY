@@ -976,21 +976,26 @@ class LettoreConsumi(thr.Thread):
 
 
 def sendMessage(IO, dato1, dato2):
+  global arduino
   with lock_arduino:
-    arduino.write(f"{IO}#{dato1}#{dato2}!".encode())
+    try:
+      arduino.write(f"{IO}#{dato1}#{dato2}!".encode())
 
-    stringa = ""
-    last_char = ""
-    while last_char != "-":
-      last_char = arduino.read().decode()
-      if last_char != "-": 
-        if last_char != "\n" and last_char != "\r": stringa += last_char
-    
+      stringa = ""
+      last_char = ""
+      while last_char != "-":
+        last_char = arduino.read().decode()
+        if last_char != "-": 
+          if last_char != "\n" and last_char != "\r": stringa += last_char
+      
 
-    if IO == "INPUT":
-      return float(stringa)
-    else:
-      return None
+      if IO == "INPUT":
+        return float(stringa)
+      else:
+        return None
+    except:
+      try: arduino = serial.Serial('/dev/ttyACM0',9600)
+      except: pass
 
 
 def extract_ip():
