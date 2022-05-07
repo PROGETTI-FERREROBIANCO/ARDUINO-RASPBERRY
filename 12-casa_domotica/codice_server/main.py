@@ -490,7 +490,7 @@ def download():
 
       #print(query)
 
-      con = pymysql.connect(host=hostname,user=dbusername,db=dbname,password=dbpassword) #sqlite3.connect(f"{dir_path}/casa.db", isolation_level=None, detect_types=sqlite3.PARSE_COLNAMES)
+      con = pymysql.connect(host=hostname,user=dbusername,db=dbname,password=dbpassword)
       cur = con.cursor()
       cur.execute(query, dati)
       output = cur.fetchall()
