@@ -36,7 +36,7 @@ void loop(){
         Serial.print(corrente);
         
         
-      }else{
+      }else if (IO == "OUTPUT"){
         int pin = split(dati, '#', 1).toInt();
         int stato = split(dati, '#', 2).toInt();
         pinMode(pin, OUTPUT);
