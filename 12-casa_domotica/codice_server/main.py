@@ -1098,4 +1098,4 @@ if __name__ == "__main__":
     lettore_consumi = LettoreConsumi()
     lettore_consumi.start()
 
-    app.run(port=800, host="0.0.0.0")
+    app.run(port=5000, host="0.0.0.0")
