@@ -124,7 +124,12 @@ def verifica_direzione(asse, spostamento, dict_da_usare):
 
         try:
             s.sendall(f"verifica_direzione|{asse}|{spostamento}".encode())
-            stato_assi = eval(s.recv(4096).decode())
+            
+            ms = s.recv(4096).decode()
+            stato_assi = eval(ms.split("|")[0])
+            if ms.split("|")[1] != "nessuno":
+                save_log(ms.split("|")[1])
+
         except:
             settings["stato_connessione"] = "ERRORE"
             save_log("Errore con la connessione")
@@ -155,7 +160,10 @@ def muovi_motore_senza_lock(index, asse, spostamento, dict_da_usare):
 
             try:
                 s.sendall(f"muovi_motore|{index}|{asse}|{spostamento}|{velocita}".encode())
-                stato_assi = eval(s.recv(4096).decode())
+                ms = s.recv(4096).decode()
+                stato_assi = eval(ms.split("|")[0])
+                if ms.split("|")[1] != "nessuno":
+                    save_log(ms.split("|")[1])
             except:
                 settings["stato_connessione"] = "ERRORE"
                 save_log("Errore con la connessione")
@@ -195,7 +203,10 @@ def muovi_motori_senza_lock(indexs, assi, spostamenti, dict_da_usare):
 
             try:
                 s.sendall(f"muovi_motori|{indexs[0]}|{indexs[1]}|{assi[0]}|{assi[1]}|{spostamenti[0]}|{spostamenti[1]}|{velocita}".encode())
-                stato_assi = eval(s.recv(4096).decode())
+                ms = s.recv(4096).decode()
+                stato_assi = eval(ms.split("|")[0])
+                if ms.split("|")[1] != "nessuno":
+                    save_log(ms.split("|")[1])
             except:
                 settings["stato_connessione"] = "ERRORE"
                 save_log("Errore con la connessione")
@@ -511,7 +522,14 @@ def finestra_avvia_simulazione(values_editor):
                 stato_assi_simulazione["Z_DX"]["stato_asse"] = 0
                 a_turtle_simulazione.goto(0,0)
                 a_turtle_simulazione.clear()
-                esegui_codice = EseguiCodice("con_lock", values_editor, "stato_assi_simulazione", int(values["BLOCCO_PARTENZA"]))
+
+                blocco_partenza = 0
+                if values["BLOCCO_PARTENZA"].isnumeric():
+                    blocco_partenza = int(values["BLOCCO_PARTENZA"])
+
+                window_simulazione["BLOCCO_PARTENZA"].Update(f"{blocco_partenza}")  
+
+                esegui_codice = EseguiCodice("con_lock", values_editor, "stato_assi_simulazione", blocco_partenza)
                 esegui_codice.start()
 
         elif event == "STOP":
@@ -599,7 +617,10 @@ def finestra_avvia_stampa(values_editor):
     if settings["stato_connessione"] == "CONNESSO":
         try:
             s.sendall("altro".encode())
-            stato_assi = eval(s.recv(4096).decode())
+            ms = s.recv(4096).decode()
+            stato_assi = eval(ms.split("|")[0])
+            if ms.split("|")[1] != "nessuno":
+                save_log(ms.split("|")[1])
         except:
             settings["stato_connessione"] = "ERRORE"
             save_log("Errore con la connessione")
@@ -646,7 +667,10 @@ def finestra_avvia_stampa(values_editor):
             if not lock_pausa.locked() and not lock_termina.locked() and not lock_pausa_istruzione.locked() and not thread_attivo and not thread_attivo_incremento:
                 try:
                     s.sendall("set_zero".encode())
-                    stato_assi = eval(s.recv(4096).decode())
+                    ms = s.recv(4096).decode()
+                    stato_assi = eval(ms.split("|")[0])
+                    if ms.split("|")[1] != "nessuno":
+                        save_log(ms.split("|")[1])
                 except:
                     settings["stato_connessione"] = "ERRORE"
                     save_log("Errore con la connessione")
@@ -669,7 +693,13 @@ def finestra_avvia_stampa(values_editor):
             if not lock_pausa.locked() and not lock_pausa_istruzione.locked() and not lock_termina.locked() and not thread_attivo and not thread_attivo_incremento:
                 a_turtle_stampa.clear()
                 if settings["stato_connessione"] == "CONNESSO":
-                    esegui_codice = EseguiCodice("con_lock", values_editor, "stato_assi", int(values["BLOCCO_PARTENZA"]))
+                    blocco_partenza = 0
+                    if values["BLOCCO_PARTENZA"].isnumeric():
+                        blocco_partenza = int(values["BLOCCO_PARTENZA"])
+
+                    window_stampa["BLOCCO_PARTENZA"].Update(f"{blocco_partenza}")           
+
+                    esegui_codice = EseguiCodice("con_lock", values_editor, "stato_assi", blocco_partenza)
                     esegui_codice.start()
                 else:
                     save_log("Esecuzione non riuscita per problemi di connessione")
@@ -814,7 +844,10 @@ def finestra_gestione_connessione():
                 try:
                     s = sck.socket(sck.AF_INET, sck.SOCK_STREAM)
                     s.connect((values[0], int(values[1]))) # tupla --> indirizzo ip, porta
-                    stato_assi = eval(s.recv(4096).decode())
+                    ms = s.recv(4096).decode()
+                    stato_assi = eval(ms.split("|")[0])
+                    if ms.split("|")[1] != "nessuno":
+                        save_log(ms.split("|")[1])
                     aggiorna_text()
                     settings["stato_connessione"] = "CONNESSO"
                     settings["ip"] = values[0]
@@ -881,7 +914,10 @@ def finestra_gestione_manuale():
     if settings["stato_connessione"] == "CONNESSO":
         try:
             s.sendall("altro".encode())
-            stato_assi = eval(s.recv(4096).decode())
+            ms = s.recv(4096).decode()
+            stato_assi = eval(ms.split("|")[0])
+            if ms.split("|")[1] != "nessuno":
+                save_log(ms.split("|")[1])
         except:
             settings["stato_connessione"] = "ERRORE"
             save_log("Errore con la connessione")
@@ -1044,13 +1080,13 @@ def scelta_salvataggio():
 
 def finestra_impostazioni():
     layout_finestra_impostazioni = [
-        [sg.Text('VELOCITÀ DISEGNO', size =(30, 1)), sg.InputText(default_text=settings["velocita_disegno"])], 
-        [sg.Text('PROPORZIONE DISEGNO', size =(30, 1)), sg.InputText(default_text=settings["proporzione_disegno"])],
-        [sg.Text('UNITÀ DI MISURA', size =(30, 1)), sg.InputText(default_text=settings["unita_di_misura"])],
-        [sg.Text('N. STEP SINGOLO MOVIMENTO', size =(30, 1)), sg.InputText(default_text=settings["numero_step_singolo_movimento"])],
-        [sg.Text('N. PUNTI PER ARCO', size =(30, 1)), sg.InputText(default_text=settings["numero_punti_arco"])],
-        [sg.Text('ALTEZZA PENUP PUNTA (-)', size =(30, 1)), sg.InputText(default_text=settings["pen_up_punta"])],
-        [sg.Text('ALTEZZA PENDOWN PUNTA (+)', size =(30, 1)), sg.InputText(default_text=settings["pen_down_punta"])],
+        [sg.Text('VELOCITÀ DISEGNO', size =(30, 1)), sg.InputText(default_text=settings["velocita_disegno"], key="velocita_disegno")], 
+        [sg.Text('PROPORZIONE DISEGNO', size =(30, 1)), sg.InputText(default_text=settings["proporzione_disegno"], key="proporzione_disegno")],
+        [sg.Text('UNITÀ DI MISURA', size =(30, 1)), sg.InputText(default_text=settings["unita_di_misura"], key="unita_di_misura")],
+        [sg.Text('N. STEP SINGOLO MOVIMENTO', size =(30, 1)), sg.InputText(default_text=settings["numero_step_singolo_movimento"], key="numero_step_singolo_movimento")],
+        [sg.Text('N. PUNTI PER ARCO', size =(30, 1)), sg.InputText(default_text=settings["numero_punti_arco"], key="numero_punti_arco")],
+        [sg.Text('ALTEZZA PENUP PUNTA (-)', size =(30, 1)), sg.InputText(default_text=settings["pen_up_punta"], key="pen_up_punta")],
+        [sg.Text('ALTEZZA PENDOWN PUNTA (+)', size =(30, 1)), sg.InputText(default_text=settings["pen_down_punta"], key="pen_down_punta")],
         [sg.Button("SALVA")]
     ]
 
@@ -1064,15 +1100,27 @@ def finestra_impostazioni():
             break
         
         elif event == "SALVA":
-            settings["velocita_disegno"] = float(values[0])
-            settings["proporzione_disegno"] = float(values[1])
-            settings["numero_step_singolo_movimento"] = int(values[3])
-            settings["numero_punti_arco"] = int(values[4])
-            settings["pen_up_punta"] = int(values[5])
-            settings["pen_down_punta"] = int(values[6])
 
-            if values[2] in conversione_unita_di_misura:
-                settings["unita_di_misura"] = values[2]
+            if isfloat(values["velocita_disegno"]):
+                settings["velocita_disegno"] = float(values["velocita_disegno"])
+
+            if isfloat(values["proporzione_disegno"]):
+                settings["proporzione_disegno"] = float(values["proporzione_disegno"])
+            
+            if values["numero_step_singolo_movimento"].isnumeric():
+                settings["numero_step_singolo_movimento"] = int(values["numero_step_singolo_movimento"])
+
+            if values["numero_punti_arco"].isnumeric():
+                settings["numero_punti_arco"] = int(values["numero_punti_arco"])
+
+            if values["pen_up_punta"].isnumeric():
+                settings["pen_up_punta"] = int(values["pen_up_punta"])
+
+            if values["pen_down_punta"].isnumeric():
+                settings["pen_down_punta"] = int(values["pen_down_punta"])
+
+            if values["unita_di_misura"] in conversione_unita_di_misura:
+                settings["unita_di_misura"] = values["unita_di_misura"]
             else:
                 settings["unita_di_misura"] = "cmm"
                 save_log("Unità di misura non valida")
@@ -1081,6 +1129,15 @@ def finestra_impostazioni():
             
 
     window.close()
+
+
+def isfloat(num):
+    try:
+        float(num)
+        return True
+    except:
+        return False
+
 
 def aggiorna_text():
 

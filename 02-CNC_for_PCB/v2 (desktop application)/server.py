@@ -2,6 +2,12 @@ import socket as sck
 import threading as thr
 import RPi.GPIO as GPIO
 from time import sleep
+import serial
+
+
+SPOSTAMENTO_ESEGUITO = 50
+
+pico = None
 
 
 allClient = []
@@ -65,29 +71,101 @@ def verifica_direzione(asse, spostamento):
 def muovi_motore(index, asse, spostamento, velocita):
     global stato_assi
 
+
+    if asse == "Y":
+        return muovi_motore_con_encorder(index, asse, spostamento, velocita)
+    else:
+        if not stato_assi[asse]["stato_finecorsa"][index]:
+            GPIO.output(pins[asse]["pul"], GPIO.HIGH)
+            sleep(velocita)
+            GPIO.output(pins[asse]["pul"], GPIO.LOW)
+            sleep(velocita)
+
+            stato_assi[asse]["stato_asse"]+= spostamento
+        return "nessuno"
+
+
+
+def muovi_motore_con_encorder(index, asse, spostamento, velocita):
+    global stato_assi
+
+    errore = "nessuno"
+
+    valore_encoder2 = 0
+    valore_encoder1 = 0
+
     if not stato_assi[asse]["stato_finecorsa"][index]:
+
+        try:
+            pico.write(f"invia;".encode())
+            run = True
+            s = ""
+            while run:
+                ch = pico.read().decode() 
+                if ch != "\n" and ch != "\r":
+                    if ch == ";":
+                        run = False
+                    else:
+                        s += ch
+
+            valore_encoder1 = int(s)
+        except:
+            errore = "Errore pico"
+            errore += f" - {connessione_pico()}"
+            
+
         GPIO.output(pins[asse]["pul"], GPIO.HIGH)
         sleep(velocita)
         GPIO.output(pins[asse]["pul"], GPIO.LOW)
         sleep(velocita)
 
-        stato_assi[asse]["stato_asse"]+= spostamento
+
+
+        try:
+            pico.write(f"invia;".encode())
+            run = True
+            s = ""
+            while run:
+                ch = pico.read().decode() 
+                if ch != "\n" and ch != "\r":
+                    if ch == ";":
+                        run = False
+                    else:
+                        s += ch
+
+            valore_encoder2 = int(s)
+        except:
+            errore = "Errore pico"
+            errore += f" - {connessione_pico()}"
+
+
+        if abs(valore_encoder2-valore_encoder1) > SPOSTAMENTO_ESEGUITO:
+            stato_assi[asse]["stato_asse"]+= spostamento
+        else:
+            return muovi_motore_con_encorder(index, asse, spostamento, velocita)
+
+    return errore
+
+
+
+def connessione_pico():
+    global pico
+
+    try: pico.close()
+    except: pass
+
+    try: pico = serial.Serial(port='/dev/ttyACM0', baudrate=115200)
+    except: return "Pico non connesso"
+
+    return "nessuno"
+    
 
 
 
 def muovi_motori(index1, index2, asse1, asse2, spostamento1, spostamento2, velocita):
-    global stato_assi
-
-    if not stato_assi[asse1]["stato_finecorsa"][index1] and not stato_assi[asse2]["stato_finecorsa"][index2]:
-        GPIO.output(pins[asse1]["pul"], GPIO.HIGH)
-        GPIO.output(pins[asse2]["pul"], GPIO.HIGH)
-        sleep(velocita)
-        GPIO.output(pins[asse1]["pul"], GPIO.LOW)
-        GPIO.output(pins[asse2]["pul"], GPIO.LOW)
-        sleep(velocita)
-
-        stato_assi[asse1]["stato_asse"]+= spostamento1
-        stato_assi[asse2]["stato_asse"]+= spostamento2
+    errore = muovi_motore(index1, asse1, spostamento1, velocita)
+    errore += f" - {muovi_motore(index2, asse2, spostamento2, velocita)}"
+    return errore
 
 
 def controllo_finecorsa_asse(asse):
@@ -120,16 +198,19 @@ class ClientManager(thr.Thread):
     #OVERRIDE
     def run(self):
         global stato_assi
-        self.connection.sendall(str(stato_assi).encode())
+        errore = "nessuno"
+        self.connection.sendall(f"{str(stato_assi)}|{errore}".encode())
         while self.running:
             receive = self.connection.recv(4096).decode()
+
+            errore = "nessuno"
 
             if receive != "":
                 receive = receive.split("|")
                 if receive[0] == "muovi_motore":
-                    muovi_motore(int(float(receive[1])), receive[2], int(float(receive[3])), float(receive[4]))
+                    errore = muovi_motore(int(float(receive[1])), receive[2], int(float(receive[3])), float(receive[4]))
                 elif receive[0] == "muovi_motori":
-                    muovi_motori(int(float(receive[1])),int(float(receive[2])), receive[3], receive[4], int(float(receive[5])), int(float(receive[6])), float(receive[7]))
+                    errore = muovi_motori(int(float(receive[1])),int(float(receive[2])), receive[3], receive[4], int(float(receive[5])), int(float(receive[6])), float(receive[7]))
                 elif receive[0] == "verifica_direzione":
                     verifica_direzione(receive[1], int(float(receive[2])))
                 elif receive[0] == "set_zero":
@@ -137,7 +218,7 @@ class ClientManager(thr.Thread):
                     stato_assi["Y"]["stato_asse"] = 0
                     stato_assi["Z_DX"]["stato_asse"] = 0
                     stato_assi["Z_SX"]["stato_asse"] = 0
-                self.connection.sendall(str(stato_assi).encode())
+                self.connection.sendall(f"{str(stato_assi)}|{errore}".encode())
             else:
                 self.running = False
 
