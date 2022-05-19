@@ -17,7 +17,7 @@ La casa domotica è gestita nel seguente modo:
 La casa domotica presenta un'interfaccia web, formata dalle pagine che segue:
 - il `login` che dopo 3 tentativi errati fa attendere un tempo che incrementerà ad ogni errore
 
- <img src="./foto/login.png" width=200, height='auto' align="center"/>
+   <img src="./foto/login.png" width=300, height='auto'/>
  
 - la pagina `home` che presenta un menu base e tutte le stanze della casa
 
