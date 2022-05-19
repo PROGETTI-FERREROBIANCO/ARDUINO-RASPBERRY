@@ -45,7 +45,7 @@ La casa domotica presenta un'interfaccia web, formata dalle pagine che segue:
 
 - la pagina `analizza consumi` che prensenta un pulsante per spegnere tutti di dispositivi della casa (o della stanza), un grafico in tempo reale dei consumi, un _line chart_ e un _donut chart_ per visualizzare i consumi tra due dati e di quali stanze (o dispositivi) sono.
 
-<img src="./foto/analizza_consumi.png" width=300, height='auto'/> <img src="./foto/analizza_consumi_2.png" width=300, height='auto'/> <img src="./foto/analizza_consumi_3.png" width=300, height='auto'/>
+<img src="./foto/analizza_consumi.png" width=300, height='auto'/> <img src="./foto/analizzza_consumi_2.png" width=300, height='auto'/> <img src="./foto/analizza_consumi_3.png" width=300, height='auto'/>
 
 
 - la pagina `amministratore` (ovviamente presente solo per l'utente amministratore) che permette di effettuare delle _query_ al DATABASE e visualizzarne il risultato
