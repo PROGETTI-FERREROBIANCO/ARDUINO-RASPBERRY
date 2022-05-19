@@ -20,9 +20,8 @@ La casa domotica presenta un'interfaccia web, formata dalle pagine che segue:
    <img src="./foto/login.png" width=300, height='auto'/>
  
 - la pagina `home` che presenta un menu base e tutte le stanze della casa
-
- ![menu](./foto/menu.png)
- ![home](./foto/home.png)
+<img src="./foto/menu.png" width=300, height='auto'/>
+<img src="./foto/home.png" width=300, height='auto'/>
 
 - la pagina di una `stanza` che presenta tutti i dispositivi all'interno
 
