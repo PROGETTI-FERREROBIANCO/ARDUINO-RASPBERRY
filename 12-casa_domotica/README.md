@@ -47,7 +47,7 @@ La casa domotica presenta un'interfaccia web, formata dalle pagine che segue:
 
 #### WEB API
 È possibile ottenere i dati di download dei consumi in formato .json, interrogando il seguenteil server con il seguente link:
-    ![`indirizzo_ip:porta`/download?id_stanza=`id_stanza`&id_dispositivo=`id_dispositivo`]
+    <u>`indirizzo_ip:porta`/download?id_stanza=`id_stanza`&id_dispositivo=`id_dispositivo`</u>
 dove:
 - `id_stanza` è l'identificativo della stanza di cui si vuole scaricare i dati, in caso si volessero tutte le stanze l'opzione è uguale ad _all_.
 - `id_dispositivo` è l'identificativo del dispositivo di cui si vuole scaricare i dati, in caso si volessero tutte i dispositivi l'opzione è uguale ad _all_.
