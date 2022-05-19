@@ -18,7 +18,7 @@ La casa domotica presenta un'interfaccia web, formata dalle pagine che segue:
 - il `login` che dopo 3 tentativi errati fa attendere un tempo che incrementerà ad ogni errore
 
  ![login](./foto/login.png)
- <img src="/foto/login.png" width=200, height='auto'></img>
+ <img src="/foto/login.png" width=200, height='auto'/>
  
 - la pagina `home` che presenta un menu base e tutte le stanze della casa
 
