@@ -3,8 +3,14 @@ from time import sleep, time
 import _thread
 import machine
 
-rele_filamento = machine.Pin(26, machine.Pin.OUT)
-rele_alta_tensione = machine.Pin(25, machine.Pin.OUT)
+rele_filamento = machine.Pin(17, machine.Pin.OUT)
+rele_alta_tensione = machine.Pin(16, machine.Pin.OUT)
+foto = machine.Pin(5, machine.Pin.OUT)
+
+rele_filamento.value(0)
+rele_alta_tensione.value(0)
+foto.value(0)
+
 
 s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
 s.bind(('', 80))
@@ -27,6 +33,14 @@ def accensione(tempo):
         tempo_iniziale = int(time())
         while int(time())-tempo_iniziale < tempo:
             #print(int(tempo_iniziale+tempo))
+
+            foto.value(1)
+            sleep(0.15)
+            foto.value(0)
+            sleep(0.1)
+            foto.value(1)
+            sleep(0.15)
+            foto.value(0)
             
             if thread_kill.locked():
                 break
@@ -88,6 +102,8 @@ while running:
   conn.close()
     
   # -- FINE API -- #
+
+
 
 
 
