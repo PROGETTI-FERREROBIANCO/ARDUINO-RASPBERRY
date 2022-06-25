@@ -9,7 +9,6 @@ SPOSTAMENTO_ESEGUITO = 50
 
 pico = None
 
-
 allClient = []
 
 pins = {
@@ -154,7 +153,9 @@ def connessione_pico():
     try: pico.close()
     except: pass
 
-    try: pico = serial.Serial(port='/dev/ttyACM0', baudrate=115200)
+    try: 
+        pico = serial.Serial(port='/dev/ttyACM0', baudrate=115200)
+        sleep(3)
     except: return "Pico non connesso"
 
     return "nessuno"
@@ -199,28 +200,35 @@ class ClientManager(thr.Thread):
     def run(self):
         global stato_assi
         errore = "nessuno"
-        self.connection.sendall(f"{str(stato_assi)}|{errore}".encode())
+        try:
+            self.connection.sendall(f"{str(stato_assi)}|{errore}".encode())
+        except:
+            self.running = False
+
         while self.running:
-            receive = self.connection.recv(4096).decode()
+            try:
+                receive = self.connection.recv(4096).decode()
 
-            errore = "nessuno"
+                errore = "nessuno"
 
-            if receive != "":
-                receive = receive.split("|")
-                if receive[0] == "muovi_motore":
-                    errore = muovi_motore(int(float(receive[1])), receive[2], int(float(receive[3])), float(receive[4]))
-                elif receive[0] == "muovi_motori":
-                    errore = muovi_motori(int(float(receive[1])),int(float(receive[2])), receive[3], receive[4], int(float(receive[5])), int(float(receive[6])), float(receive[7]))
-                elif receive[0] == "verifica_direzione":
-                    verifica_direzione(receive[1], int(float(receive[2])))
-                elif receive[0] == "set_zero":
-                    stato_assi["X"]["stato_asse"] = 0
-                    stato_assi["Y"]["stato_asse"] = 0
-                    stato_assi["Z_DX"]["stato_asse"] = 0
-                    stato_assi["Z_SX"]["stato_asse"] = 0
-                self.connection.sendall(f"{str(stato_assi)}|{errore}".encode())
-            else:
-                self.running = False
+                if receive != "":
+                    receive = receive.split("|")
+                    if receive[0] == "muovi_motore":
+                        errore = muovi_motore(int(float(receive[1])), receive[2], int(float(receive[3])), float(receive[4]))
+                    elif receive[0] == "muovi_motori":
+                        errore = muovi_motori(int(float(receive[1])),int(float(receive[2])), receive[3], receive[4], int(float(receive[5])), int(float(receive[6])), float(receive[7]))
+                    elif receive[0] == "verifica_direzione":
+                        verifica_direzione(receive[1], int(float(receive[2])))
+                    elif receive[0] == "set_zero":
+                        stato_assi["X"]["stato_asse"] = 0
+                        stato_assi["Y"]["stato_asse"] = 0
+                        stato_assi["Z_DX"]["stato_asse"] = 0
+                        stato_assi["Z_SX"]["stato_asse"] = 0
+                    self.connection.sendall(f"{str(stato_assi)}|{errore}".encode())
+                else:
+                    self.running = False
+            except:
+                pass
 
 
             
@@ -236,6 +244,7 @@ def settaggio_motori():
 
 def main():
     settaggio_motori()
+    connessione_pico()
 
     controllo_finecorsa = ControlloFinecorsa()
     controllo_finecorsa.start()
@@ -245,10 +254,13 @@ def main():
 
     s.listen()
     while True:
-        connection, address = s.accept()
-        client = ClientManager(connection, address, len(allClient))
-        allClient.append(client)
-        client.start()
+        try:
+            connection, address = s.accept()
+            client = ClientManager(connection, address, len(allClient))
+            allClient.append(client)
+            client.start()
+        except:
+            pass
         
 if __name__ == "__main__":
     main()

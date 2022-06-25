@@ -124,22 +124,27 @@ def verifica_direzione(asse, spostamento, dict_da_usare):
 
         try:
             s.sendall(f"verifica_direzione|{asse}|{spostamento}".encode())
-            
+        except:
+            finestra_riprova(funzione = f's.sendall("verifica_direzione|{asse}|{spostamento}".encode())')
+
+        try:            
             ms = s.recv(4096).decode()
-            stato_assi = eval(ms.split("|")[0])
+            stato_assi_nuovo = eval(ms.split("|")[0])
             if ms.split("|")[1] != "nessuno":
                 save_log(ms.split("|")[1])
-
+            stato_assi = stato_assi_nuovo
         except:
-            settings["stato_connessione"] = "ERRORE"
-            save_log("Errore con la connessione")
+            _, stato_assi = finestra_riprova()
+
 
         aggiorna_text()
+        aggiorna_text_simulazione()
     else:
         pass
 
     if spostamento >= 0: return 0
     else: return 1
+
 
 
 # STAMPA
@@ -157,22 +162,28 @@ def muovi_motore_senza_lock(index, asse, spostamento, dict_da_usare):
     if dict_da_usare == "stato_assi":
         if not lock_termina.locked():
             velocita = settings["velocita_disegno"]
-
             try:
                 s.sendall(f"muovi_motore|{index}|{asse}|{spostamento}|{velocita}".encode())
+            except:
+                finestra_riprova(funzione=f's.sendall("muovi_motore|{index}|{asse}|{spostamento}|{velocita}".encode())')
+
+
+            try:
                 ms = s.recv(4096).decode()
-                stato_assi = eval(ms.split("|")[0])
+                stato_assi_nuovo = eval(ms.split("|")[0])
                 if ms.split("|")[1] != "nessuno":
                     save_log(ms.split("|")[1])
+                stato_assi = stato_assi_nuovo
             except:
-                settings["stato_connessione"] = "ERRORE"
-                save_log("Errore con la connessione")
+                _, stato_assi_nuovo = finestra_riprova()
+                if stato_assi_nuovo != "": stato_assi = stato_assi_nuovo
 
-            if(stato_assi["Z_SX"]["stato_asse"] > 0): a_turtle_stampa.pencolor("#ff0000") # red
-            elif(stato_assi["Z_SX"]["stato_asse"] < 0): a_turtle_stampa.pencolor("#00ff00") # green
-            elif(stato_assi["Z_SX"]["stato_asse"] == 0): a_turtle_stampa.pencolor("#0000ff") # blue
-            a_turtle_stampa.goto(stato_assi["X"]["stato_asse"]*settings["proporzione_disegno"]/100, stato_assi["Y"]["stato_asse"]*settings["proporzione_disegno"]/100)
-
+            try:
+                if(stato_assi["Z_SX"]["stato_asse"] > 0): a_turtle_stampa.pencolor("#ff0000") # red
+                elif(stato_assi["Z_SX"]["stato_asse"] < 0): a_turtle_stampa.pencolor("#00ff00") # green
+                elif(stato_assi["Z_SX"]["stato_asse"] == 0): a_turtle_stampa.pencolor("#0000ff") # blue
+                a_turtle_stampa.goto(stato_assi["X"]["stato_asse"]*settings["proporzione_disegno"]/100, stato_assi["Y"]["stato_asse"]*settings["proporzione_disegno"]/100)
+            except: pass
             aggiorna_text()
 
     else:
@@ -180,10 +191,13 @@ def muovi_motore_senza_lock(index, asse, spostamento, dict_da_usare):
             sleep(settings["velocita_disegno"])
             stato_assi_simulazione[asse]["stato_asse"]+= spostamento
 
-            if(stato_assi_simulazione["Z_SX"]["stato_asse"] > 0): a_turtle_simulazione.pencolor("#ff0000") # red
-            elif(stato_assi_simulazione["Z_SX"]["stato_asse"] < 0): a_turtle_simulazione.pencolor("#00ff00") # green
-            elif(stato_assi_simulazione["Z_SX"]["stato_asse"] == 0): a_turtle_simulazione.pencolor("#0000ff") # blue
-            a_turtle_simulazione.goto(stato_assi_simulazione["X"]["stato_asse"]*settings["proporzione_disegno"]/100, stato_assi_simulazione["Y"]["stato_asse"]*settings["proporzione_disegno"]/100)
+            try:
+                if(stato_assi_simulazione["Z_SX"]["stato_asse"] > 0): a_turtle_simulazione.pencolor("#ff0000") # red
+                elif(stato_assi_simulazione["Z_SX"]["stato_asse"] < 0): a_turtle_simulazione.pencolor("#00ff00") # green
+                elif(stato_assi_simulazione["Z_SX"]["stato_asse"] == 0): a_turtle_simulazione.pencolor("#0000ff") # blue
+                a_turtle_simulazione.goto(stato_assi_simulazione["X"]["stato_asse"]*settings["proporzione_disegno"]/100, stato_assi_simulazione["Y"]["stato_asse"]*settings["proporzione_disegno"]/100)
+            except: pass
+            aggiorna_text_simulazione()
 
 
 def muovi_motori_con_lock(indexs, assi, spostamenti, dict_da_usare):
@@ -203,21 +217,27 @@ def muovi_motori_senza_lock(indexs, assi, spostamenti, dict_da_usare):
 
             try:
                 s.sendall(f"muovi_motori|{indexs[0]}|{indexs[1]}|{assi[0]}|{assi[1]}|{spostamenti[0]}|{spostamenti[1]}|{velocita}".encode())
+            except:
+                finestra_riprova(funzione=f's.sendall("muovi_motori|{indexs[0]}|{indexs[1]}|{assi[0]}|{assi[1]}|{spostamenti[0]}|{spostamenti[1]}|{velocita}".encode())')
+
+            try:
                 ms = s.recv(4096).decode()
-                stato_assi = eval(ms.split("|")[0])
+                stato_assi_nuovo = eval(ms.split("|")[0])
                 if ms.split("|")[1] != "nessuno":
                     save_log(ms.split("|")[1])
+                stato_assi = stato_assi_nuovo
             except:
-                settings["stato_connessione"] = "ERRORE"
-                save_log("Errore con la connessione")
+                _, stato_assi_nuovo = finestra_riprova()
+                if stato_assi_nuovo != "": stato_assi = stato_assi_nuovo
 
-
-            if(stato_assi["Z_SX"]["stato_asse"] > 0): a_turtle_stampa.pencolor("#ff0000") # red
-            elif(stato_assi["Z_SX"]["stato_asse"] < 0): a_turtle_stampa.pencolor("#00ff00") # green
-            elif(stato_assi["Z_SX"]["stato_asse"] == 0): a_turtle_stampa.pencolor("#0000ff") # blue
-            a_turtle_stampa.goto(stato_assi["X"]["stato_asse"]*settings["proporzione_disegno"]/100, stato_assi["Y"]["stato_asse"]*settings["proporzione_disegno"]/100)
-
+            try:
+                if(stato_assi["Z_SX"]["stato_asse"] > 0): a_turtle_stampa.pencolor("#ff0000") # red
+                elif(stato_assi["Z_SX"]["stato_asse"] < 0): a_turtle_stampa.pencolor("#00ff00") # green
+                elif(stato_assi["Z_SX"]["stato_asse"] == 0): a_turtle_stampa.pencolor("#0000ff") # blue
+                a_turtle_stampa.goto(stato_assi["X"]["stato_asse"]*settings["proporzione_disegno"]/100, stato_assi["Y"]["stato_asse"]*settings["proporzione_disegno"]/100)
+            except: pass
             aggiorna_text()
+
     else:
         if not lock_termina.locked():
             sleep(settings["velocita_disegno"])
@@ -225,10 +245,14 @@ def muovi_motori_senza_lock(indexs, assi, spostamenti, dict_da_usare):
             stato_assi_simulazione[assi[0]]["stato_asse"]+= spostamenti[0]
             stato_assi_simulazione[assi[1]]["stato_asse"]+= spostamenti[1]
 
-            if(stato_assi_simulazione["Z_SX"]["stato_asse"] > 0): a_turtle_simulazione.pencolor("#ff0000") # red
-            elif(stato_assi_simulazione["Z_SX"]["stato_asse"] < 0): a_turtle_simulazione.pencolor("#00ff00") # green
-            elif(stato_assi_simulazione["Z_SX"]["stato_asse"] == 0): a_turtle_simulazione.pencolor("#0000ff") # blue
-            a_turtle_simulazione.goto(stato_assi_simulazione["X"]["stato_asse"]*settings["proporzione_disegno"]/100, stato_assi_simulazione["Y"]["stato_asse"]*settings["proporzione_disegno"]/100)
+            try:
+                if(stato_assi_simulazione["Z_SX"]["stato_asse"] > 0): a_turtle_simulazione.pencolor("#ff0000") # red
+                elif(stato_assi_simulazione["Z_SX"]["stato_asse"] < 0): a_turtle_simulazione.pencolor("#00ff00") # green
+                elif(stato_assi_simulazione["Z_SX"]["stato_asse"] == 0): a_turtle_simulazione.pencolor("#0000ff") # blue
+                a_turtle_simulazione.goto(stato_assi_simulazione["X"]["stato_asse"]*settings["proporzione_disegno"]/100, stato_assi_simulazione["Y"]["stato_asse"]*settings["proporzione_disegno"]/100)
+            except: pass
+
+            aggiorna_text_simulazione()
 
 
 
@@ -433,6 +457,69 @@ comandi_funzioni = {
                                                                              
 """
 
+def finestra_riprova(funzione=None, check=0):
+    global s
+
+    settings["stato_connessione"] = "ERRORE"
+    save_log("Errore con la connessione")
+
+    layout_riprova_connessione = [
+        [sg.Text('IP', size =(15, 1)), sg.InputText(settings["ip"])],
+        [sg.Text('PORTA', size =(15, 1)), sg.InputText(settings["porta"])],
+        [sg.Button("RIPROVA"), sg.Button("ANNULLA")],
+    ]
+
+    window = sg.Window('ERRORE CONNESSIONE', layout_riprova_connessione, modal=True)
+
+    ris = "annulla"
+    stato_assi = ""
+
+
+    while True:
+        event = "None"
+        values = "None"
+        try:
+            event, values = window.read()
+        except:pass
+
+        ris = "annulla"
+        stato_assi = ""
+
+        if event == sg.WIN_CLOSED or event=="Exit":
+            break
+        elif event == "RIPROVA":
+
+            ris = "riprova"
+            try:
+                s = sck.socket(sck.AF_INET, sck.SOCK_STREAM)
+                s.connect((values[0], int(values[1]))) # tupla --> indirizzo ip, porta
+                ms = s.recv(4096).decode()
+                stato_assi = eval(ms.split("|")[0])
+                if ms.split("|")[1] != "nessuno":
+                    save_log(ms.split("|")[1])
+                aggiorna_text()
+                settings["stato_connessione"] = "CONNESSO"
+                settings["ip"] = values[0]
+                settings["porta"] = int(values[1])
+            except:
+                settings["stato_connessione"] = "ERRORE"
+                ris, stato_assi = finestra_riprova(check=check+1)
+
+            if check == 0:
+                if ris == "annulla":
+                    lock_termina.acquire(blocking=False)
+                else:
+                    if funzione != None:
+                        eval(funzione)
+            
+            window.close()
+            return ris, stato_assi
+
+        elif event == "ANNULLA":
+            break
+
+    window.close()
+    return ris, stato_assi
 
 
 def finestra_avvia_simulazione(values_editor):
@@ -477,6 +564,8 @@ def finestra_avvia_simulazione(values_editor):
     layout_avvia = [
         [sg.Button("AVVIA"), sg.Button("STOP"), sg.Button("STOP ISTRUZIONE"), sg.Button("RIPRENDI")],  
         [sg.T("")],
+        [sg.Text("X: ", size =(16, 1), key="X"), sg.Text("Y: ", size =(16, 1), key="Y"), sg.Text("Z: ", size =(16, 1), key="Z")],
+        [sg.T("")],
         [sg.Text("BLOCCO DI PARTENZA"), sg.InputText(default_text="0", key="BLOCCO_PARTENZA")],
         [sg.Text("BLOCCO IN ESECUZIONE: ", key="-NBLOCCO-")],
         [sg.T("")],
@@ -498,9 +587,16 @@ def finestra_avvia_simulazione(values_editor):
     cod = [f"{e}: {a}" for e, a in enumerate(values_editor.split("\n"))]
     window_simulazione["-BLOCCHI-"].Update(cod)
 
+    aggiorna_text_simulazione()
+
     esegui_codice = None
     while True:
-        event, values = window_simulazione.read()
+        event = "None"
+        values = "None"
+        try:
+            event, values = window_simulazione.read()
+        except:pass
+        
         if event == "Exit" or event == sg.WIN_CLOSED or event == "-WINDOW CLOSE ATTEMPTED-":
             lock_termina.acquire(blocking=False)
 
@@ -629,7 +725,13 @@ def finestra_avvia_stampa(values_editor):
 
     esegui_codice = None
     while True:
-        event, values = window_stampa.read()
+        event = "None"
+        values = "None"
+        try:
+            event, values = window_stampa.read()
+        except:pass
+
+        
         if event == "Exit" or event == sg.WIN_CLOSED or event == "-WINDOW CLOSE ATTEMPTED-":
             lock_termina.acquire(blocking=False)
 
@@ -760,7 +862,12 @@ def finestra_spcb():
     window_spcb = sg.Window("SPCB", layout_spcb, enable_close_attempted_event=True, finalize=True)
 
     while True:
-        event, values = window_spcb.read()
+
+        event = "None"
+        values = "None"
+        try:
+            event, values = window_spcb.read()
+        except:pass
 
         #print(event)
 
@@ -836,7 +943,12 @@ def finestra_gestione_connessione():
     window = sg.Window('GESTIONE CONNESSIONE', layout_gestione_connessione, modal=True)
 
     while True:
-        event, values = window.read()
+        event = "None"
+        values = "None"
+        try:
+            event, values = window.read()
+        except:pass
+
         if event == sg.WIN_CLOSED or event=="Exit":
             break
         elif event == "CONNETTI":
@@ -925,7 +1037,12 @@ def finestra_gestione_manuale():
         aggiorna_text()
 
     while True:
-        event, values = window_gestione_manuale.read()
+        event = "None"
+        values = "None"
+        try:
+            event, values = window_gestione_manuale.read()
+        except:pass
+
 
         #print(event)
 
@@ -1060,7 +1177,11 @@ def scelta_salvataggio():
 
     scelta = "Nulla"
     while True:
-        event, values = window.read()
+        event = "None"
+        values = "None"
+        try:
+            event, values = window.read()
+        except:pass
 
         if event == sg.WIN_CLOSED or event=="Exit":
             scelta = "Nulla"
@@ -1094,7 +1215,12 @@ def finestra_impostazioni():
     window = sg.Window(title="IMPOSTAZIONI",layout=layout_finestra_impostazioni, modal=True)
 
     while True:
-        event, values = window.read()
+        event = "None"
+        values = "None"
+        try:
+            event, values = window.read()
+        except:pass
+
 
         if event == sg.WIN_CLOSED or event=="Exit":
             break
@@ -1137,6 +1263,20 @@ def isfloat(num):
         return True
     except:
         return False
+
+
+def aggiorna_text_simulazione():
+    conversione = conversione_unita_di_misura[settings["unita_di_misura"]]
+
+    try:
+        x = stato_assi_simulazione["X"]["stato_asse"]/conversione
+        y = stato_assi_simulazione["Y"]["stato_asse"]/conversione
+        z = stato_assi_simulazione["Z_SX"]["stato_asse"]/conversione
+        window_simulazione["X"].Update(f"X: {x}")
+        window_simulazione["Y"].Update(f"Y: {y}")
+        window_simulazione["Z"].Update(f"Z: {z}")
+    except:
+        pass
 
 
 def aggiorna_text():
@@ -1209,7 +1349,11 @@ def finestra_debug():
     window = sg.Window('DEGUB', layout_debug, modal=True)
 
     while True:
-        event, values = window.read()
+        event = "None"
+        values = "None"
+        try:
+            event, values = window.read()
+        except:pass
 
         if event == sg.WIN_CLOSED or event=="Exit":
             break
@@ -1235,6 +1379,50 @@ class EseguiCodice(thr.Thread):
     
     def run(self):
 
+        lista_errori = []
+
+        # verifica correttezza blocchi
+        for i, istruzione in enumerate(self.codice.split("\n")):
+            istruzione = istruzione.replace(" ", "")
+            if "#" not in istruzione and istruzione != "":
+                try:
+                    comando = istruzione.split("(")[0]
+                    parametri = istruzione.split("(")[1].replace(")", "").split(",")
+                
+                    conversione = conversione_unita_di_misura[settings["unita_di_misura"]]
+                    parametri = [round(float(i)*conversione) for i in parametri]
+
+                    if comando not in comandi_funzioni: lista_errori.append(i)
+                except:
+                    lista_errori.append(i)
+
+        if len(lista_errori) != 0:
+            lista_blocchi = self.codice.split("\n")
+
+            stringa_lista_blocchi = ""
+
+            for j, blocco in enumerate(lista_blocchi):
+
+                if j in lista_errori:
+                    stringa_lista_blocchi += f"{blocco} --> ERRORE\n"
+                    save_log(f"Blocco n. {j} non corretto!")
+                else:
+                    stringa_lista_blocchi += f"{blocco}\n"
+
+            stringa_lista_blocchi = stringa_lista_blocchi[:-1]
+            cod = [f"{e}: {a}" for e, a in enumerate(stringa_lista_blocchi.split("\n"))]
+
+            try:
+                window_simulazione["-BLOCCHI-"].Update(cod)
+            except:pass
+
+            try:
+                window_stampa["-BLOCCHI-"].Update(cod)
+            except:pass
+
+            return
+
+
         for i, istruzione in enumerate(self.codice.split("\n")):
 
                 if not lock_termina.locked():
@@ -1250,20 +1438,22 @@ class EseguiCodice(thr.Thread):
                         istruzione = istruzione.replace(" ", "")
 
                         if "#" not in istruzione and istruzione != "":
+                            comando = istruzione.split("(")[0]
+                            parametri = istruzione.split("(")[1].replace(")", "").split(",")
+                        
+                            conversione = conversione_unita_di_misura[settings["unita_di_misura"]]
+                            parametri = [round(float(i)*conversione) for i in parametri]
 
-                            try:
-                                comando = istruzione.split("(")[0]
-                                parametri = istruzione.split("(")[1].replace(")", "").split(",")
-                            
-                                conversione = conversione_unita_di_misura[settings["unita_di_misura"]]
-                                parametri = [round(float(i)*conversione) for i in parametri]
-
-                                comandi_funzioni[comando](parametri, self.tipo_funzione, self.dict_da_usare)
-                            except:
-                                save_log(f"Blocco n. {i} non corretto!")
+                            comandi_funzioni[comando](parametri, self.tipo_funzione, self.dict_da_usare)
                 
                 else:
                     break
+        
+
+        try:
+            lock_termina.release()
+        except:
+            pass
         
         
     
