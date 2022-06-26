@@ -71,7 +71,7 @@ def muovi_motore(index, asse, spostamento, velocita):
     global stato_assi
 
 
-    if asse == "Y":
+    if asse == "Y": # l'asse Y presenta dei problemi elettrici e vengono compensati così:
         return muovi_motore_con_encorder(index, asse, spostamento, velocita)
     else:
         if not stato_assi[asse]["stato_finecorsa"][index]:

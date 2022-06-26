@@ -66,7 +66,7 @@ def muovi_motore(index, asse, spostamento, velocita):
 
     if not stato_assi[asse]["stato_finecorsa"][index]:
 
-        if asse == "Y":
+        if asse == "Y": # l'asse Y presenta dei problemi elettrici e vengono compensati così:
             sleep(0.01)
             GPIO.output(pins[asse]["pul"], GPIO.HIGH)
             sleep(velocita)
