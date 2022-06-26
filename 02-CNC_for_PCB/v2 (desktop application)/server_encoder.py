@@ -2,6 +2,12 @@ import socket as sck
 import threading as thr
 import RPi.GPIO as GPIO
 from time import sleep
+import serial
+
+
+SPOSTAMENTO_ESEGUITO = 50
+
+pico = None
 
 allClient = []
 
@@ -64,25 +70,96 @@ def verifica_direzione(asse, spostamento):
 def muovi_motore(index, asse, spostamento, velocita):
     global stato_assi
 
+
+    if asse == "Y":
+        return muovi_motore_con_encorder(index, asse, spostamento, velocita)
+    else:
+        if not stato_assi[asse]["stato_finecorsa"][index]:
+            GPIO.output(pins[asse]["pul"], GPIO.HIGH)
+            sleep(velocita)
+            GPIO.output(pins[asse]["pul"], GPIO.LOW)
+            sleep(velocita)
+
+            stato_assi[asse]["stato_asse"]+= spostamento
+        return "nessuno"
+
+
+
+def muovi_motore_con_encorder(index, asse, spostamento, velocita):
+    global stato_assi
+
+    errore = "nessuno"
+
+    valore_encoder2 = 0
+    valore_encoder1 = 0
+
     if not stato_assi[asse]["stato_finecorsa"][index]:
 
-        if asse == "Y":
-            sleep(0.01)
-            GPIO.output(pins[asse]["pul"], GPIO.HIGH)
-            sleep(velocita)
-            GPIO.output(pins[asse]["pul"], GPIO.LOW)
-            sleep(velocita)
-            sleep(0.01)
+        try:
+            pico.write(f"invia;".encode())
+            run = True
+            s = ""
+            while run:
+                ch = pico.read().decode() 
+                if ch != "\n" and ch != "\r":
+                    if ch == ";":
+                        run = False
+                    else:
+                        s += ch
+
+            valore_encoder1 = int(s)
+        except:
+            errore = "Errore pico"
+            errore += f" - {connessione_pico()}"
+            
+
+        GPIO.output(pins[asse]["pul"], GPIO.HIGH)
+        sleep(velocita)
+        GPIO.output(pins[asse]["pul"], GPIO.LOW)
+        sleep(velocita)
+
+
+
+        try:
+            pico.write(f"invia;".encode())
+            run = True
+            s = ""
+            while run:
+                ch = pico.read().decode() 
+                if ch != "\n" and ch != "\r":
+                    if ch == ";":
+                        run = False
+                    else:
+                        s += ch
+
+            valore_encoder2 = int(s)
+        except:
+            errore = "Errore pico"
+            errore += f" - {connessione_pico()}"
+
+
+        if abs(valore_encoder2-valore_encoder1) > SPOSTAMENTO_ESEGUITO:
+            stato_assi[asse]["stato_asse"]+= spostamento
         else:
-            GPIO.output(pins[asse]["pul"], GPIO.HIGH)
-            sleep(velocita)
-            GPIO.output(pins[asse]["pul"], GPIO.LOW)
-            sleep(velocita)
+            return muovi_motore_con_encorder(index, asse, spostamento, velocita)
 
-        stato_assi[asse]["stato_asse"]+= spostamento
-    
+    return errore
+
+
+
+def connessione_pico():
+    global pico
+
+    try: pico.close()
+    except: pass
+
+    try: 
+        pico = serial.Serial(port='/dev/ttyACM0', baudrate=115200)
+        sleep(3)
+    except: return "Pico non connesso"
+
     return "nessuno"
-
+    
 
 
 
@@ -167,6 +244,7 @@ def settaggio_motori():
 
 def main():
     settaggio_motori()
+    connessione_pico()
 
     controllo_finecorsa = ControlloFinecorsa()
     controllo_finecorsa.start()
