@@ -30,6 +30,7 @@ Il codice si divide in un parti:
 - main.py → è il ﬁle che viene eseguito dopo il boot.py ed è quello che crea il servizio in internet
 
 Immagini interfaccia web
+
 ![interfaccia_web](./foto/interfaccia.jpeg)
 
 ### Autori
