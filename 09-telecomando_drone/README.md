@@ -7,5 +7,4 @@ Di seguito sono riportate alcune immagini del progetto.
 
 
 <img src="./foto/foto_0.jpeg" width="20%" heigth="auto"></img>
-<img src="./foto/foto_1.jpeg" width="20%" heigth="auto"></img>
 <img src="./foto/foto_4.jpeg" width="20%" heigth="auto"></img>
