@@ -3,7 +3,7 @@
 In questo progetto abbiamo costruito un sito web per poter controllare una casa a distanza.
 
 ### Hardware
-_Fa ru_
+_Al momento non ancora realizzato._
 
 ### Funzionamento
 
