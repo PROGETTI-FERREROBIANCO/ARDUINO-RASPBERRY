@@ -1,0 +1,283 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Calibrazione cella {{id_cella}}</title>
+
+  <link rel="stylesheet" href="/static/css/jquery-ui.css">
+  <link rel="stylesheet" href="/static/css/jquery-ui.structure.css">
+  <link rel="stylesheet" href="/static/css/jquery-ui.theme.css">
+  <link rel="stylesheet" href="/static/css/bootstrap.min.css">
+  <link href="/static/css/style.css" rel="stylesheet">
+
+  <style>
+    label, input { display:block; }
+    input.text { margin-bottom:12px; width:95%; padding: .4em; }
+    fieldset { padding:0; border:0; margin-top:25px; }
+    h1 { font-size: 1.2em; margin: .6em 0; }
+    div#users-contain { width: 450px; margin: 20px 0;}
+    div#users-contain table { margin: 1em 0; border-collapse: collapse; width: 100%; }
+    div#users-contain table td, div#users-contain table th { border: 1px solid #eee; padding: .6em 10px; text-align: left; }
+    .ui-dialog .ui-state-error { padding: .3em; }
+    .validateTips { border: 1px solid transparent; padding: 0.3em; }
+  </style>
+  <style>
+    table{
+        text-align: center;
+    }
+    td{
+        vertical-align: middle;
+    }
+    .switch {
+  position: relative;
+  display: inline-block;
+  width: 45px;
+  height: 25px;
+}
+
+.switch input { 
+  opacity: 0;
+  width: 0;
+  height: 0;
+}
+
+.slider {
+  position: absolute;
+  cursor: pointer;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background-color: #ccc;
+  -webkit-transition: .4s;
+  transition: .4s;
+}
+
+.slider:before {
+  position: absolute;
+  content: "";
+  height: 19px;
+  width: 19px;
+  left: 3px;
+  bottom: 3px;
+  background-color: white;
+  -webkit-transition: .4s;
+  transition: .4s;
+}
+
+input:checked + .slider {
+  background-color: #12b300;
+}
+
+input:focus + .slider {
+  box-shadow: 0 0 1px #12b300;
+}
+
+input:checked + .slider:before {
+  -webkit-transform: translateX(19px);
+  -ms-transform: translateX(19px);
+  transform: translateX(19px);
+}
+
+/* Rounded sliders */
+.slider.round {
+  border-radius: 25px;
+}
+
+.slider.round:before {
+  border-radius: 50%;
+}
+  </style>
+  <script>var id_cella = {{id_cella}};</script>
+  <script src="/static/js/jquery-3.6.0.min.js"></script>
+  <script src="/static/js/jquery-ui.js"></script>
+  <script src="/static/js/calibrazione.js"></script>
+</head>
+<body style="background-color:#f8f7f7" onload="richiediDati({{id_cella}})">
+  <div class="alert alert-success" role="alert" style="display: none;" id="div_alert_cal"></div>
+  <h2 align="center" style="color: #00A6A6;">Scheda calibrazione <b>cella {{id_cella}}</b></h2>
+
+  <div style="float:right; margin-right: 2%;">
+    <table class="table table-borderless"><tr>
+    <td><button class="btn" style="background-color: #BBDEF0" onclick="prendi_pinza_cal({{id_cella}})" title="prendi la pinza di calibrazione">PRENDI CAL</button></td>
+    <td><button class="btn" style="background-color: #BBDEF0" onclick="posa_pinza_cal({{id_cella}})" title="posa la pinza di calibrazione">POSA CAL</button></td>
+    <td><button class="btn" style="background-color: #12b300" onclick="inviaDatiModificati({{id_cella}})">SALVA</button></td>
+    <td><button type="BUTTON" class="btn btn-dark"  onclick="confermaUscita()">CHIUDI PAGINA</button></td>
+   </tr></table>
+  </div>
+
+  <script>
+    function confermaUscita(){
+      let conferma = confirm("Uscendo tutte le modifiche non salvate andranno perse.")
+      if(conferma) {window.open('', '_self', ''); window.close();}
+    }
+  </script>
+ 
+<div id="dialog-pinza">
+  <label class="switch" style="float: right;">
+    <input type="checkbox" id="ckb_pinza" onclick="dis_abFinestre('pinza')">
+    <span class="slider"></span>
+  </label><br>
+
+    <i>Attenzione! Le dimensioni sono espresse in millimetri. Inoltre per la calibrazione è necessario utilizzare l'apposita pinza</i>
+    <fieldset>
+      <label for="funzione_pinza">Funzione pinza (componenti che deve prendere, ...): </label>
+      <input type="text" name="funzione_pinza" id="funzione_pinza" value="" class="text ui-widget-content ui-corner-all">
+      <hr>
+      <table class="table"><tr>
+        <td><label for="tipo_pinza">Tipo pinza: </label></td>
+        <td><select name="tipo_pinza" id="tipo_pinza" class="text ui-widget-content ui-corner-all form-select" onchange="verificaSelectCalibrazione()">
+        </select></td>
+      </tr></table>
+
+      <label for="coord_pinza">Coord postazione pinza: </label>
+      <table id="coord_pinza" name="coord_pinza" class="table">
+        <tr>
+          <td>X:<input type="number" name="coord_x_pinza" id="coord_x_pinza" class="text ui-widget-content ui-corner-all" min="1" max="500"></td>
+          <td>Y:<input type="number" name="coord_y_pinza" id="coord_y_pinza" class="text ui-widget-content ui-corner-all" min="1" max="500"></td>
+          <td>Z:<input type="number" name="coord_z_pinza" id="coord_z_pinza" class="text ui-widget-content ui-corner-all" min="1" max="500"></td>
+          <td rowspan="2" style="vertical-align: middle!important;" ><div style="flex-direction: column; display: flex;"><button id="salva_coord_pinza" class="btn btn-info" value="pinza" onclick="salvaCoord(this);">Memorizza</button>
+            <br><button id="vai_qui_pinza" style="background-color: #F49F0A;" class="btn" value="pinza" onclick="vaiQui(this);">Vai qui</button></div></td>
+        </tr>
+        <tr>
+          <td>y:<input type="number" name="coord_yaw_pinza" id="coord_yaw_pinza" class="text ui-widget-content ui-corner-all" min="1" max="1000"></td>
+          <td>p:<input type="number" name="coord_pitch_pinza" id="coord_pitch_pinza" class="text ui-widget-content ui-corner-all" min="1" max="1000"></td>
+          <td>r:<input type="number" name="coord_roll_pinza" id="coord_roll_pinza" class="text ui-widget-content ui-corner-all" min="1" max="1000"></td>
+        </tr>
+      </table>
+
+      <table class="table"><tr>
+      <td style="width: 40%;"><label for="altezza_alim">Altezza dall'alimentatore:</label></td> 
+      <td><input type="number" name="altezza_alim" id="altezza_alim" class="text ui-widget-content ui-corner-all"></td>
+      </tr><tr>
+      <td style="width: 40%;"><label for="altezza_ins_comp" >Altezza per l'inserimento del componente:</label></td>
+      <td><input type="number" name="altezza_ins_comp" id="altezza_ins_comp" class="text ui-widget-content ui-corner-all"></td>
+      </tr></table>
+      <!-- Allow form submission with keyboard without duplicating the dialog button -->
+      <input type="submit" tabindex="-1" style="position:absolute; top:-1000px">
+    </fieldset>
+</div>
+
+
+<div id="dialog-alim">
+  <label class="switch" style="float: right;">
+    <input type="checkbox" id="ckb_alim" onclick="dis_abFinestre('alim')">
+    <span class="slider"></span>
+  </label><br>
+    <i>Attenzione! Le dimensioni sono espresse in millimetri. Inoltre per la calibrazione è necessario utilizzare l'apposita pinza</i>
+    <fieldset>
+          <label for="funzione_alim">Funzione alimentatore (componenti caricati, ...): </label>
+          <input type="text" name="funzione_alim" id="funzione_alim" value="" class="text ui-widget-content ui-corner-all">
+          <hr>
+          <table class="table"><tr>
+            <td><label for="tipo_alim">Tipo alimentatore: </label></td>
+            <td><select name="tipo_alim" id="tipo_alim" class="text ui-widget-content ui-corner-all form-select">
+            </select></td>
+          </tr></table>
+    
+          <label for="coord_alim">Coord postazione alimentatore: </label>
+          <table id="coord_alim" name="coord_alim" class="table">
+            <tr>
+              <td>X:<input type="number" name="coord_x_alim" id="coord_x_alim" class="text ui-widget-content ui-corner-all" min="1" max="500"></td>
+              <td>Y:<input type="number" name="coord_y_alim" id="coord_y_alim" class="text ui-widget-content ui-corner-all" min="1" max="500"></td>
+              <td>Z:<input type="number" name="coord_z_alim" id="coord_z_alim" class="text ui-widget-content ui-corner-all" min="1" max="500"></td>
+              <td rowspan="2" style="vertical-align: middle!important;" ><div style="flex-direction: column; display: flex;"><button id="salva_coord_alim" class="btn btn-info" value="alim" onclick="salvaCoord(this);">Memorizza</button>
+                <br><button id="vai_qui_alim" style="background-color: #F49F0A;" class="btn" value="alim" onclick="vaiQui(this);">Vai qui</button></div></td>
+            </tr>
+            <tr>
+              <td>y:<input type="number" name="coord_yaw_alim" id="coord_yaw_alim" class="text ui-widget-content ui-corner-all" min="1" max="500"></td>
+              <td>p:<input type="number" name="coord_pitch_alim" id="coord_pitch_alim" class="text ui-widget-content ui-corner-all" min="1" max="500"></td>
+              <td>r:<input type="number" name="coord_roll_alim" id="coord_roll_alim" class="text ui-widget-content ui-corner-all" min="1" max="500"></td>
+            </tr>
+          </table>
+      <!-- Allow form submission with keyboard without duplicating the dialog button -->
+      <input type="submit" tabindex="-1" style="position:absolute; top:-1000px">
+    </fieldset>
+</div>
+ 
+<div id="dialog-zero" title="Impostazione dello zero della scheda"> 
+    <i>Attenzione! Le dimensioni sono espresse in millimetri. Inoltre per la calibrazione è necessario utilizzare l'apposita pinza</i>
+    <fieldset>
+          <label for="desc_zero">Descrizione del campo: </label>
+          <input type="text" name="desc_zero" id="desc_zero" value="" class="text ui-widget-content ui-corner-all">
+          <hr>
+        
+          <table id="coord_zero" name="coord_zero" class="table">
+            <tr>
+              <td>X:<input type="number" name="coord_x_zero" id="coord_x_zero" class="text ui-widget-content ui-corner-all" min="1" max="500"></td>
+              <td>Y:<input type="number" name="coord_y_zero" id="coord_y_zero" class="text ui-widget-content ui-corner-all" min="1" max="500"></td>
+              <td>Z:<input type="number" name="coord_z_zero" id="coord_z_zero" class="text ui-widget-content ui-corner-all" min="1" max="500"></td>
+              <td rowspan="2" style="vertical-align: middle!important;" ><div style="flex-direction: column; display: flex;"><button id="salva_coord_zero" class="btn btn-info" value="zero" onclick="salvaCoord(this);">Memorizza</button>
+                <button id="vai_qui_zero" style="background-color: #F49F0A;" class="btn" value="zero" onclick="vaiQui(this);">Vai qui</button></div></td>
+            </tr>
+            <tr>
+              <td>y:<input type="number" name="coord_yaw_zero" id="coord_yaw_zero" class="text ui-widget-content ui-corner-all" min="1" max="500"></td>
+              <td>p:<input type="number" name="coord_pitch_zero" id="coord_pitch_zero" class="text ui-widget-content ui-corner-all" min="1" max="500"></td>
+              <td>r:<input type="number" name="coord_roll_zero" id="coord_roll_zero" class="text ui-widget-content ui-corner-all" min="1" max="500"></td>
+            </tr>
+          </table>
+      <!-- Allow form submission with keyboard without duplicating the dialog button -->
+      <input type="submit" tabindex="-1" style="position:absolute; top:-1000px">
+    </fieldset>
+</div>
+ 
+
+<table class="table table-bordered" style="table-layout: fixed; width: 50%; margin-top: 5%; border-color: #a9a9a9;" align="center">
+  <tr>
+      <td colspan="4"></td>
+      <td colspan="2"><button id="create-zero" value="SETZERO_1" style="background-color: #EFCA08; border-color: #EFCA08;" class="btn">Set zero</button></td>
+      <td colspan="4"></td>
+  </tr>
+  <tr>
+      <td rowspan="2"><button id="create-alim-1" value="ALIMENTATORE_1" style="background-color: #F08700; border-color: #F08700;" class="btn">Alim 1</button></td>
+      <td colspan="2" rowspan="2"></td>
+      <td><button id="create-pinza-1" value="PINZA_1" style="background-color: #00A6A6; border-color: #00A6A6;" class="btn btn-sm">pinza 1</button></td>
+      <td colspan="2"></td>
+      <td><button id="create-pinza-10" value="PINZA_10" style="background-color: #00A6A6; border-color: #00A6A6;" class="btn btn-sm">pinza 10</button></td>
+      <td colspan="2" rowspan="2"></td>
+      <td rowspan="2"><button id="create-alim-10" value="ALIMENTATORE_10" style="background-color: #F08700; border-color: #F08700;" class="btn">Alim 10</button></td>
+  </tr>
+  <tr>
+      <td><button id="create-pinza-2" value="PINZA_2" style="background-color: #00A6A6; border-color: #00A6A6;" class="btn btn-sm">pinza 2</button></td>
+      <td rowspan="3" colspan="2">robot</td>
+      <td><button id="create-pinza-9" value="PINZA_9" style="background-color: #00A6A6; border-color: #00A6A6;" class="btn btn-sm">pinza 9</button></td>
+  </tr>
+  <tr>
+      <td rowspan="2"><button id="create-alim-2" value="ALIMENTATORE_2" style="background-color: #F08700; border-color: #F08700;" class="btn">Alim 2</button></td>
+      <td colspan="2"><button id="create-mg-sx" value="MAGAZZINO_SX" style="background-color: #BBDEF0; border-color: #BBDEF0;" class="btn">Magazzino sx</button></td>
+      <td><button id="create-pinza-3" value="PINZA_3" style="background-color: #00A6A6; border-color: #00A6A6;" class="btn btn-sm">pinza 3</button></td>
+      <td><button id="create-pinza-8" value="PINZA_8" style="background-color: #00A6A6; border-color: #00A6A6;" class="btn btn-sm">pinza 8</button></td>
+      <td colspan="2"><button id="create-mg-dx" value="MAGAZZINO_DX" style="background-color: #BBDEF0; border-color: #BBDEF0;" class="btn">Magazzino dx</button></td>
+      <td rowspan="2"><button id="create-alim-9" value="ALIMENTATORE_9" style="background-color: #F08700; border-color: #F08700;" class="btn">Alim 9</button></td>
+  </tr>
+  <tr>
+      <td colspan="2" rowspan="2"></td> 
+      <td><button id="create-pinza-4" value="PINZA_4" style="background-color: #00A6A6; border-color: #00A6A6;" class="btn btn-sm">pinza 4</button></td>
+      <td><button id="create-pinza-7" value="PINZA_7" style="background-color: #00A6A6; border-color: #00A6A6;" class="btn btn-sm">pinza 7</button></td>
+      <td colspan="2" rowspan="2"></td>
+  </tr>
+  <tr>
+      <td rowspan="2"><button id="create-alim-3" value="ALIMENTATORE_3" style="background-color: #F08700; border-color: #F08700;" class="btn">Alim 3</button></td>
+      <td><button id="create-pinza-5" value="PINZA_5" style="background-color: #00A6A6; border-color: #00A6A6;" class="btn btn-sm">pinza 5</button></td>
+      <td colspan="2"></td>
+      <td><button id="create-pinza-6" value="PINZA_6" style="background-color: #00A6A6; border-color: #00A6A6;" class="btn btn-sm">pinza 6</button></td>
+      <td rowspan="2"><button id="create-alim-8" value="ALIMENTATORE_8" style="background-color: #F08700; border-color: #F08700;" class="btn">Alim 8</button></td>
+  </tr>
+  <tr>
+      <td colspan="8"></td>
+  </tr>
+  <tr>
+      <td></td>
+      <td colspan="2"><button id="create-alim-4" value="ALIMENTATORE_4" style="background-color: #F08700; border-color: #F08700;" class="btn">Alim 4</button></td>
+      <td colspan="2"><button id="create-alim-5" value="ALIMENTATORE_5" style="background-color: #F08700; border-color: #F08700;" class="btn">Alim 5</button></td>
+      <td colspan="2"><button id="create-alim-6" value="ALIMENTATORE_6" style="background-color: #F08700; border-color: #F08700;" class="btn">Alim 6</button></td>
+      <td colspan="2"><button id="create-alim-7" value="ALIMENTATORE_7" style="background-color: #F08700; border-color: #F08700;" class="btn">Alim 7</button></td>
+      <td></td>
+  </tr>
+  
+
+</table>
+ 
+</body>
+</html>

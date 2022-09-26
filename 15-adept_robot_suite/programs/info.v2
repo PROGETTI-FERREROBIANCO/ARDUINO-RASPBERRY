@@ -1,0 +1,70 @@
+; #### Programma per l'invio dello stato del robot # 200+ #### ;
+.PROGRAM info.v2()
+        LOCAL $stringa_pos, $str_inv_in, $in.strin
+        AUTO statusin, no_waitin, handlein, lunin ;inizializzione variabili locali
+        ATTACH (lunin,4) "TCP"
+        FOPEN (lunin, 16) "/LOCAL_PORT 2002 /CLIENTS 5 /BUFFER_SIZE 4096" ;apertura del server TCP
+        IF IOSTAT (lunin) < 0 THEN ;verifica della corretta apertura
+            TYPE "Attach error: ", $ERROR(IOSTAT(lunin))
+        END
+        no_waitin = 0 ;serve per rendere la read bloccante (1 significa non bloccante)
+        READ (lunin, handlein, no_waitin) $in.strin 
+        statusin = IOSTAT(lunin)
+        ;TYPE "statusin: ", statusin
+        CASE statusin OF
+        VALUE 100: ;New connection opened
+        ;TYPE "New connection established. handlein =", handlein
+
+
+    200  READ (lunin, handlein, no_waitin) $in.strin
+        statusin = IOSTAT(lunin)
+        IF statusin == 1 THEN
+            ;TYPE "Messaggio ricevuto: ", $in.strin
+
+            ; .... lettura dei dati ....
+            ;FORMATO: {'joint':[lista],}
+            HERE #pos_robotin
+            DECOMPOSE array_posin[] = #pos_robotin
+            $stringa_pos = $ENCODE("[", array_posin[0], ",", array_posin[1], ",", array_posin[2], ",", array_posin[3], "]")
+            $str_inv_in = $ENCODE("{ 'pos_joint': ", $stringa_pos, ",")
+
+            WRITE (lunin, handlein) $str_inv_in
+
+            ; --------------------------
+
+            FOR indfor = 1001 TO 1012
+                IF SIG.INS(indfor) THEN
+                    $str_inv_in = $ENCODE("'",indfor,"': ",SIG(indfor),",")
+                END
+                WRITE (lunin, handlein) $str_inv_in
+            END
+
+            FOR indfor = 1033 TO 1064
+                IF SIG.INS(indfor) THEN
+                    $str_inv_in = $ENCODE("'",indfor,"': ",SIG(indfor),",")
+                END
+                WRITE (lunin, handlein) $str_inv_in
+            END
+            
+            WRITE (lunin, handlein) "}"
+            ; ..........................  
+
+
+            
+            GOTO 200
+        ELSE
+            TYPE "Errore nella comunicazione"
+        END        
+        VALUE 101: ;Connection closed
+        TYPE "Connection closed. handlein =", handlein
+        VALUE -526: ;No data received
+        TYPE "No data received"
+        WAIT
+        ANY ;Some other error
+        TYPE "Error during READ: ", $ERROR(statusin)
+        ; FCLOSE(lunin)
+        END
+        
+
+.END
+; ##################################################### ;

@@ -1,0 +1,10 @@
+.PROGRAM get_pos.v2()
+
+    HERE #cposgp
+    DECOMPOSE jointsgp[1] = #cposgp
+
+    SOLVE.TRANS new.transgp, errorgp = jointsgp[1]
+    DECOMPOSE coordgp[] = new.transgp
+    TYPE "{'x':",coordgp[0],",'y':",coordgp[1],",'z':",coordgp[2],",'yaw':",0.0,",'pitch':",180.0,",'roll':",coordgp[5],"}"
+
+.END

@@ -1,0 +1,280 @@
+<!doctype html>
+<html>
+<head>
+    <!-- Required meta tags -->
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <!-- Bootstrap CSS -->
+    <link href="../static/css/bootstrap.min.css" rel="stylesheet">
+    <script src="/static/js/jquery-3.6.0.min.js"></script>
+    <!-- <link href="/static/css/bootstrap.min.css" rel="stylesheet" integrity="sha384-1BmE4kWBq78iYhFldvKuhfTAU6auU8tT94WrHftjDbrCEXSU1oBoqyl2QvZ6jIW3" crossorigin="anonymous"> -->
+
+    <title>Scararobot Control Panel</title>
+    <script>var richieste_celle;</script>
+</head>
+<body style="background-color:#f4f4f4;" onload="richieste_celle = setInterval(sonoOccupate,5000); crea_barra({{lista_celle_disponibili}});">
+  <nav class="navbar navbar-expand-lg navbar-light" style="border-color:#00A6A6">  
+    <div class="collapse navbar-collapse" id="navbarSupportedContent">
+      <ul class="navbar-nav mr-auto" id="ul_barra_iniziale">
+        <li class="nav-item active">
+          <a class="nav-link" href="/">Home</a>
+        </li>
+      </ul>
+    </div>
+  </nav><br>
+  <script>
+var uploadfatto = false;
+var richiedi_n_schede;
+var started = false
+var n_schede_da_produrre = 0;
+var numero_celle = []
+function crea_barra(lista_numeri){
+var stringa_b_i = "";
+var stringa_tr = "<tr><th>Numero cella</th><th>Stato produzione</th><th>Stato cella</th></tr>"
+  for (const [key, value] of Object.entries(lista_numeri)) {
+    numero_celle.push(key)
+    stringa_b_i += '</li><li class="nav-item"><a class="nav-link" href="/cella?id_cella='+key+'" target="_blank">Cella '+key+'</a></li>'
+    stringa_tr += "<tr><td>Cella "+key+"</td><td id='td_cella_"+key+"'>Produzione non avviata ...</td><td id='td_stato_cella_"+key+"'>ANALISI IN CORSO ...</td></tr>";
+  }
+  document.getElementById("ul_barra_iniziale").innerHTML +=stringa_b_i;
+  document.getElementById("tbl_celle").innerHTML = stringa_tr
+}
+
+  </script>
+    
+  <div class="alert alert-success" role="alert" style="display: none;" id="div_alert"></div><br>
+  <h2 align="center" style="color: #00A6A6;">Home page</h2>
+  
+  <div style="float:right; margin-right: 2%;">
+    <table class="table table-borderless"><tr>
+    <td><button class="btn" style="background-color: #12b300" value="AVVIA" id="btn_avvia" title="esegui il programma sulle celle">ESEGUI</button></td>
+    <td><button class="btn" style="background-color: #fa5923" value="STOP" id="btn_stop" title="ferma il programma in esecuzione" disabled>STOP</button></td>
+    <td><form enctype = "multipart/form-data" onsubmit="return false;" >
+      <input type="file" name="fileupload" accept=".csv"/>
+      <button type="button" class="btn" style="background-color: #BBDEF0" onclick="upload_file(this.form, '/upload_programma_celle')">CARICA</button>
+    </form></td>
+   </tr></table>
+  </div>
+   <form name="form_main">
+    <div>
+      Tempo di produzione: <span id="hour">00</span>:<span id="minute">00</span>:<span id="second">00</span>:<span id="millisecond">000</span>
+    </div>
+  
+  <div><table class="table" id="tbl_celle" style="width:70%" align="center"></table></div>
+
+
+  <script>
+
+const sleep = (ms) => {
+      return new Promise(resolve => setTimeout(resolve, ms));
+  }
+
+async function upload_file(form, url) {
+  let formData = new FormData(form);           
+  //formData.append("file", fileupload.files[0]);
+  const response = await fetch(url, {
+    method: "POST", 
+    body: formData
+  });
+  const rispostajs = await response.text();
+  console.log("Risposta: "+rispostajs)
+
+  if (rispostajs == "OK"){
+    document.getElementById("div_alert").innerHTML = "l'upload è andato a buon fine";
+    document.getElementById("div_alert").classList.replace("alert-danger", "alert-success");
+    uploadfatto = true;
+  }
+  else {
+    document.getElementById("div_alert").innerHTML = "Errore! "+rispostajs;
+    document.getElementById("div_alert").classList.replace("alert-success", "alert-danger");
+  }
+
+  document.getElementById("div_alert").style.display = "block";
+  const do_sleep = async() => {
+    await sleep(5000);
+    document.getElementById("div_alert").style.display = "none";
+  }
+  do_sleep()
+
+}
+
+var r_stato_celle;
+
+function sonoOccupate(){
+    r_stato_celle = $.ajax({
+                url: "/stato_celle",
+                async: true,
+                type: 'GET',
+            });
+    r_stato_celle.done(function (response, textStatus, jqXHR){
+      var risposta = response
+      for (const [key, value] of Object.entries(risposta)) {
+      // key: numero cella, value: true o false
+        if (value){document.getElementById("td_stato_cella_"+key).innerHTML = "<div style='border-radius: 3%; background-color: #a1ff98; width:90%;' align='center'>ATTIVA</div>";}
+        else {document.getElementById("td_stato_cella_"+key).innerHTML = "<div style='border-radius: 3%; background-color: #eb9696; width:90%;' align='center'>SPENTA</div>";} 
+      }
+    });
+    r_stato_celle.fail(function (jqXHR, textStatus, errorThrown){
+      alert("Errore del server. Chiudere la pagina.")
+      clearInterval(richieste_celle)
+      });
+    }
+  
+  $("#btn_stop, #btn_avvia").click(function(event){
+	  var valore = document.getElementById(this.id).value;
+    if(valore == "AVVIA"){
+      if(!(uploadfatto)){
+        alert("Devi prima caricare un file!")
+        return
+      }
+      var n_schede;
+      n_schede = prompt("Inserire il numero di schede da produrre: ")
+      if (n_schede == null) return;
+      console.log(parseInt(n_schede))
+      if (isNaN(parseInt(n_schede))){
+        document.getElementById("div_alert").innerHTML = "Errore! Il numero di schede non è valido!";
+        document.getElementById("div_alert").classList.replace("alert-success", "alert-danger");
+        document.getElementById("div_alert").style.display = "block";
+
+        const do_sleep = async() => {
+          await sleep(5000);
+          document.getElementById("div_alert").style.display = "none";
+        }
+        do_sleep()
+        return
+      }
+      else{
+        n_schede_da_produrre = n_schede;
+      }
+    }
+    request = $.ajax({
+        url: "/",
+        type: "post",
+        data: "comando="+valore+"&valore="+n_schede
+    });
+
+    request.done(function (response, textStatus, jqXHR){
+      if(response != "OK"){
+        document.getElementById("div_alert").innerHTML = "Errore! "+rispostajs;
+        document.getElementById("div_alert").classList.replace("alert-success", "alert-danger");
+
+        document.getElementById("div_alert").style.display = "block";
+        const do_sleep = async() => {
+          await sleep(5000);
+          document.getElementById("div_alert").style.display = "none";
+        }
+        do_sleep()
+      }else{
+        if(valore == "AVVIA"){
+          reset()
+          start()
+          document.getElementById("btn_avvia").disabled = true;
+          document.getElementById("btn_stop").disabled = false;
+          richiedi_n_schede = setInterval(function(){
+            r_scheda = $.ajax({
+                      url: "/counter_schede_fatte",
+                      async: true,
+                      type: 'GET',
+                  });
+            r_scheda.done(function (response, textStatus, jqXHR){
+              console.log("La risposta è ... "+response)
+              var fine_produzione = true;
+              for (const [key, value] of Object.entries(response)) {
+                if(n_schede_da_produrre > value) fine_produzione = false
+                console.log("key: "+key+" value: "+ value)
+                document.getElementById("td_cella_"+key).innerHTML = '<progress style="background:#F4F4F4;" id="progress_cella_'+key+'" value="'+value+'" max="'+n_schede_da_produrre+'"></progress> '+value+'/'+n_schede_da_produrre
+
+              }
+              if (fine_produzione){
+                pause()
+                clearInterval(richiedi_n_schede)
+                document.getElementById("div_alert").innerHTML = "Produzione conclusa con successo!";
+                document.getElementById("div_alert").classList.replace("alert-danger", "alert-success");
+                document.getElementById("div_alert").style.display = "block";
+                const do_sleep = async() => {
+                  await sleep(5000);
+                  document.getElementById("div_alert").style.display = "none";
+                }
+                do_sleep()
+              }
+            });
+          },5000);
+        }else if(valore == "STOP"){
+          pause()
+          clearInterval(richiedi_n_schede)
+          document.getElementById("btn_stop").disabled = true;
+          document.getElementById("btn_avvia").disabled = false;
+          for (let a = 0; a < numero_celle.length; a++) {
+            document.getElementById("td_cella_"+numero_celle[a]).innerHTML = "Produzione non avviata ..."
+          }
+        }
+      }
+    });
+  });
+
+
+/**FUNZIONI PER IL TIMER**/
+var myTimer;
+
+//Check if started ot not
+
+
+//Timer
+let hour = 0;
+let minute = 0;
+let second = 0;
+let millisecond = 0;
+
+let cron;
+
+document.form_main.start.onclick = () => start();
+document.form_main.pause.onclick = () => pause();
+document.form_main.reset.onclick = () => reset();
+
+function start() {
+  pause();
+  cron = setInterval(() => { timer(); }, 10);
+}
+
+function pause() {
+  clearInterval(cron);
+}
+
+function reset() {
+  hour = 0;
+  minute = 0;
+  second = 0;
+  millisecond = 0;
+  document.getElementById('hour').innerText = '00';
+  document.getElementById('minute').innerText = '00';
+  document.getElementById('second').innerText = '00';
+  document.getElementById('millisecond').innerText = '000';
+}
+
+function timer() {
+  if ((millisecond += 10) == 1000) {
+    millisecond = 0;
+    second++;
+  }
+  if (second == 60) {
+    second = 0;
+    minute++;
+  }
+  if (minute == 60) {
+    minute = 0;
+    hour++;
+  }
+  document.getElementById('hour').innerText = returnData(hour);
+  document.getElementById('minute').innerText = returnData(minute);
+  document.getElementById('second').innerText = returnData(second);
+  document.getElementById('millisecond').innerText = returnData(millisecond);
+}
+
+function returnData(input) {
+  return input > 10 ? input : `0${input}`
+}
+
+  </script>
+
+</body>
+</html>

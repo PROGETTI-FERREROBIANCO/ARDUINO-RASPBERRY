@@ -1,0 +1,185 @@
+<!doctype html>
+<html>
+<head>
+    <!-- Required meta tags -->
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <!-- Bootstrap CSS -->
+    <link href="/static/css/bootstrap.min.css" rel="stylesheet">
+    <script src="/static/js/jquery-3.6.0.min.js"></script>
+    <!-- <link href="/static/css/bootstrap.min.css" rel="stylesheet" integrity="sha384-1BmE4kWBq78iYhFldvKuhfTAU6auU8tT94WrHftjDbrCEXSU1oBoqyl2QvZ6jIW3" crossorigin="anonymous"> -->
+
+    <title>Cambia indirizzo IP cella {{id_cella}}</title>
+    <script>var id_cella = {{id_cella}}; var vecchio_indirizzo_ip, vecchia_subnet_mask, vecchi_flag = [];</script>
+    <style>
+    .center-screen {
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        text-align: center;
+        min-height: 100vh;
+    }
+    </style>
+</head>
+
+<body style="background-color:#f8f7f7">
+    <div class="alert alert-success" role="alert" style="display: none;" id="div_alert"></div>
+    <div class="container" align="center" style="margin-top: 5%; display: none;" id="div_connesso">
+        <h2 align="center" style="color: #00A6A6;">Cambia indirizzo IP: <b>cella {{id_cella}}</b></h2>
+        <br>
+
+        <table>
+            <tr><td>Indirizzo IP: </td><td><input type="text" class="form-control" placeholder="Indirizzo IP" name="indirizzo_ip" id="indirizzo_ip" style="opacity: .8;"></td></tr>
+            <br><br>
+            <tr><td>Subnet Mask: </td><td><input type="text" class="form-control" placeholder="Subnet Mask" name="subnet_mask" id="subnet_mask" style="opacity: .8;"></td></tr>
+        </table>
+        <br>
+        <table>
+            <tr><td> <input type="checkbox" id="condition1" name="condition1"></td><td><label for="condition1"> AdeptWindows PC as default interface</label></td></tr>
+            <tr><td> <input type="checkbox" id="condition2" name="condition2"></td><td><label for="condition2"> Enable autostart Auto.v2</label></td></tr>
+            <tr><td> <input type="checkbox" id="condition3" name="condition3"></td><td><label for="condition3"> This PC is default NFS server</label></td></tr>
+            <tr><td> <input type="checkbox" id="condition4" name="condition4"></td><td><label for="condition4"> Re-start adept controller</label></td></tr>
+        </table>
+        <br>
+        <div align="center"><p style="color:crimson; display: none;" id="errore_cambia_ip"><strong>Errore:</strong></p></div>
+        <br>
+        <table><tr>
+            <td><button type="button" class="btn" style="background-color: #00A6A6;" value="CAMBIA" name="comando" onclick="cambia_ip()">CAMBIA</button></td>
+            <td><button type="BUTTON" class="btn btn-dark"  onclick="confermaUscita()">ESCI</button></td>
+          </tr></table>
+      </div>
+
+    <script>
+    function confermaUscita(){
+        let conferma = confirm("Uscendo tutte le modifiche non salvate andranno perse.")
+        if(conferma) {window.open('', '_self', ''); window.close();}
+    }
+        
+    function completaIP(lista_numeri){
+        console.log(lista_numeri)
+        document.getElementById("indirizzo_ip").value = lista_numeri[id_cella][0];
+        document.getElementById("subnet_mask").value = lista_numeri[id_cella][1];
+        vecchio_indirizzo_ip = lista_numeri[id_cella][0]
+        vecchia_subnet_mask = lista_numeri[id_cella][1];
+        for(let a = 1; a < 5; a++){
+            document.getElementById("condition"+a).checked = lista_numeri[id_cella][a+1]
+            vecchi_flag.push(lista_numeri[id_cella][a+1])
+        }
+    }
+
+    function arrayEquals(a, b) {
+    return Array.isArray(a) &&
+        Array.isArray(b) &&
+        a.length === b.length &&
+        a.every((val, index) => val === b[index]);
+    }
+
+    function cambia_ip(){
+        const regexExp = /^(([0-9]|[1-9][0-9]|1[0-9]{2}|2[0-4][0-9]|25[0-5])\.){3}([0-9]|[1-9][0-9]|1[0-9]{2}|2[0-4][0-9]|25[0-5])$/gi;
+        const regexSM = /^(((255\.){3}(255|254|252|248|240|224|192|128|0+))|((255\.){2}(255|254|252|248|240|224|192|128|0+)\.0)|((255\.)(255|254|252|248|240|224|192|128|0+)(\.0+){2})|((255|254|252|248|240|224|192|128|0+)(\.0+){3}))$/gi; 
+        let ind_ip = document.getElementById("indirizzo_ip").value;
+        let sub_mask = document.getElementById("subnet_mask").value;
+        let nuovi_flag = []
+
+        for(let a = 1; a < 5; a++){
+            nuovi_flag.push(document.getElementById("condition"+a).checked) 
+        }
+
+        document.getElementById("errore_cambia_ip").style.display = "none";
+        document.getElementById("indirizzo_ip").style.backgroundColor = "white";
+        document.getElementById("subnet_mask").style.backgroundColor = "white";
+        document.getElementById("indirizzo_ip").style.borderColor = "black";
+        document.getElementById("subnet_mask").style.borderColor = "black";
+        
+        //Non faccio la richiesta nel caso non si siano cambiati i parametri
+        if(ind_ip == vecchio_indirizzo_ip && sub_mask == vecchia_subnet_mask && arrayEquals(vecchi_flag, nuovi_flag)) return
+
+        if(sub_mask != vecchia_subnet_mask){
+            let conferma = confirm("La subnet mask è stata cambiata. Procedere?")
+            if(!(conferma)){
+                document.getElementById("subnet_mask").value = vecchia_subnet_mask;
+                return
+            }
+        }
+
+        //Verifico la correttezza dell'indirizzo IP e della subnet mask
+        if(!(regexExp.test(ind_ip))){
+            document.getElementById("errore_cambia_ip").style.display = "block";
+            document.getElementById("errore_cambia_ip").innerHTML = "<strong>Errore:</strong> L'indirizzo IP non è valido!";
+            document.getElementById("indirizzo_ip").style.backgroundColor = "#efabab";
+            document.getElementById("indirizzo_ip").style.borderColor = "#ff5d4f";
+            return
+        }
+
+        if(!(regexSM.test(sub_mask))){
+            document.getElementById("errore_cambia_ip").style.display = "block";
+            document.getElementById("errore_cambia_ip").innerHTML = "<strong>Errore:</strong> La subnet mask non è valida!";
+            document.getElementById("subnet_mask").style.backgroundColor = "#efabab";
+            document.getElementById("subnet_mask").style.borderColor = "#ff5d4f";
+            return
+        }
+
+        var inputs = "comando=CAMBIA_IP&valore="+vecchio_indirizzo_ip+"|"+ind_ip+"|"+sub_mask+"|"+nuovi_flag[0]+"|"+nuovi_flag[1]+"|"+nuovi_flag[2]+"|"+nuovi_flag[3];
+
+        inputs = inputs.replaceAll("+", "%2B")
+        console.log(inputs)
+
+        request = $.ajax({
+            url: "/network_controller?id_cella="+id_cella,
+            type: "post",
+            data: inputs
+        });
+
+        request.done(function (response, textStatus, jqXHR){
+            if (response != "OK"){
+                document.getElementById("div_alert").innerHTML = "Errore! "+response;
+                document.getElementById("div_alert").classList.replace("alert-success", "alert-danger");
+                document.getElementById("div_alert").style.display = "block";
+            }else{
+                document.getElementById("div_alert").innerHTML = "Indirizzo cambiato con successo! Per poter rendere effettive le modifiche disconnettiti dal robot e riavvialo."
+                document.getElementById("div_alert").classList.replace("alert-danger", "alert-success");
+                document.getElementById("div_alert").style.display = "block";
+            }
+        });
+    }
+    </script>
+
+    <div align="center" id="div_preconnessione_1" class="center-screen">
+        <div align="center" style="width: 30%;">
+            <h4>Assicurati che il robot sia spento.</h4><br>
+            <button type="button" class="btn btn-lg" style="background-color: #00A6A6; float: right;" value="AVANTI" name="comando" onclick="effettua_richiesta()">AVANTI</button>
+        </div>
+    </div>
+    <div style="display: none;" align="center" id="div_preconnessione_2" class="center-screen">
+        <h4>Accendi il robot e attendi.</h4>
+    </div>
+    <script>
+function effettua_richiesta(){
+    document.getElementById("div_preconnessione_1").style.display = "none";
+    document.getElementById("div_preconnessione_2").style.display = "flex";
+
+
+    request = $.ajax({
+        url: "/network_controller?id_cella="+id_cella,
+        type: "post",
+        data: "comando=RICHIEDI_INFO"
+    });
+
+    // Callback handler that will be called on success
+    request.done(function (response, textStatus, jqXHR){
+        //response: {stato:"OK", dati:lista_celle_disponibili}
+        if(response["stato"] == "OK"){
+            document.getElementById("div_preconnessione_2").style.display = "none";
+            document.getElementById("div_connesso").style.display = "block";
+            completaIP(response["dati"])
+        }
+        else{
+            document.getElementById("div_alert").innerHTML = "Errore! "+response["stato"]+" Riavvia la pagina e riprova!";
+            document.getElementById("div_alert").classList.replace("alert-success", "alert-danger");
+            document.getElementById("div_alert").style.display = "block";
+        }
+    });
+
+}
+    </script>
+</body>

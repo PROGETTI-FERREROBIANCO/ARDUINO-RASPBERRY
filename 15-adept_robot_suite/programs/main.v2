@@ -1,0 +1,1297 @@
+; __________________________________
+; _ PROGRAMMA PRINCIPALE _
+; __________________________________
+
+; #### Attivazione e cablibrazione del robot #### ;
+.PROGRAM main.v2()
+       ;;MC ENABLE POWER
+        ;MC CALIBRATE
+        SINGLE ALWAYS
+        CALL def_var.v2
+.END 
+; ############################################### ;
+
+
+; ###### Inizializzazione delle variabili ####### ;
+
+.PROGRAM def_var.v2()
+
+    AUTO disk, $fnome
+    LOCAL ieeof, $sep, $input, $temp, $nulla, $tempc, error
+
+    ; ............... input supporto pinza ...................
+
+        bi.test.ins = 1001       ;test inserimento
+        bi.blc.pinza.o = 1002    ;Blocco pinza aperto
+        bi.pres.pinza = 1003     ;Presenza pinza su supporto
+        bi.aria = 1004           ;presenza aria
+    ; ........................................................
+
+    ; .................. input da PLC ........................
+
+        bi.anomalia = 1005
+        bi.pres.card = 1006
+        bi.escl.robot = 1007
+        bi.errore.conv = 1008
+
+        bi.escl.porte = 1009
+        bi.pinza.comp = 1010
+        bi.free2 = 1011
+        bi.free3 = 1012
+        bi.vuoto.pinza = 1033   
+
+        bi.pinza.mag[1] = 1034
+        bi.pinza.mag[2] = 1035
+        bi.pinza.mag[3] = 1036
+        bi.pinza.mag[4] = 1037
+        bi.pinza.mag[5] = 1038
+        bi.pinza.mag[6] = 1039
+        bi.pinza.mag[7] = 1040
+        bi.pinza.mag[8] = 1041
+        bi.pinza.mag[9] = 1042
+        bi.pinza.mag[10] = 1043
+
+
+
+        bi.alim.vuoti = 1044
+
+        bi.alim.pos[1] = 1045
+        bi.taglio.ok[1] = 1046
+
+        bi.alim.pos[2] = 1047
+        bi.taglio.ok[2] = 1048
+
+        bi.alim.pos[3] = 1049
+        bi.taglio.ok[3] = 1050
+
+        bi.alim.pos[4] = 1051
+        bi.taglio.ok[4] = 1052
+
+        bi.alim.pos[5] = 1053
+        bi.taglio.ok[5] = 1054
+
+        bi.alim.pos[6] = 1055
+        bi.taglio.ok[6] = 1056
+
+        bi.alim.pos[7] = 1057
+        bi.taglio.ok[7] = 1058
+
+        bi.alim.pos[8] = 1059
+        bi.taglio.ok[8] = 1060
+
+        bi.alim.pos[9] = 1061
+        bi.taglio.ok[9] = 1062
+
+        bi.alim.pos[10] = 1063
+        bi.taglio.ok[10] = 1064
+    
+    ; ........................................................
+
+
+    ; ...................... output ..........................
+
+        bo.start.conv = 1 ;muove nastro
+        bo.emergenza = 2
+        bo.mount.end = 3
+        bo.reset.errore = 4
+        bo.free2 = 5
+        bo.free3 = 6
+        bo.free4 = 7
+        bo.free5 = 8
+
+        bo.test.ins = 33
+        bo.blc.pinza = 34
+        bo.sblc.pinza = 35
+        bo.inserz.comp = 36
+        bo.paral.on = 39     ;chiude pinza
+        bo.paral.off = 38    ;apre pinza
+        bo.free1 = 40
+        bo.vuoto = 41
+        bo.lamp.verde = 42
+        bo.lamp.arancio = 43
+        bo.lamp.rosso = 44
+
+        bo.taglio[1] = 45
+        bo.alimenta.com[1] = 46
+
+        bo.taglio[2] = 47
+        bo.alimenta.com[2] = 48
+
+        bo.taglio[3] = 49
+        bo.alimenta.com[3] = 50
+
+        bo.taglio[4] = 51
+        bo.alimenta.com[4] = 52
+
+        bo.taglio[5] = 53
+        bo.alimenta.com[5] = 54
+
+        bo.taglio[6] = 55
+        bo.alimenta.com[6] = 56
+
+        bo.taglio[7] = 57
+        bo.alimenta.com[7] = 58
+
+        bo.taglio[8] = 59
+        bo.alimenta.com[8] = 60
+
+
+        bo.taglio[9] = 61
+        bo.alimenta.com[9] = 62
+
+        bo.taglio[10] = 63
+        bo.alimenta.com[10] = 64
+    ; ........................................................
+
+    ; .................... posizioni .........................
+
+; #al_taglio[1] 58.592285156 48.849826813 133.109573364 61.4375
+; #al_taglio[2] 73.056266785 49.613265991 133.8074646 76.53125
+
+        val_invalido = 9999
+        $sep = "|"
+        $fnome = "d:\posi.txt"
+        MCS "LOAD " +$fnome
+        ATTACH (disk, 4) "disk"
+        IF IOSTAT(disk) < 0 GOTO 300
+        file.size = IOSTAT(disk,2)
+        ieeof = -504 ;End-of-file error code
+        FOPENR (disk, 100 ,2) $fnome
+        IF IOSTAT(disk) < 0 GOTO 300
+
+        FOR i = 1 TO 10
+            READ (disk) $input
+            ; TYPE "riga: ", $input
+
+            $temp = $DECODE($input, $sep,0)
+            $temp = $DECODE($input, $sep,1)
+
+            $temp = $DECODE($input, $sep,0)
+            $nulla = "null"
+            $tempc = $MID($temp,0,4)
+
+            CASE STRDIF($tempc,$nulla) OF
+            VALUE 0:
+                tipo_pinza[i] = -1
+                $temp = $DECODE($input, $sep,1)
+                p_pinza_x[i] = 9999
+                p_pinza_y[i] = 9999
+                p_pinza_z[i] = 9999
+                p_pinza_ya[i] = 9999
+                p_pinza_p[i] = 9999
+                p_pinza_r[i] = 9999
+                h_alim[i] = 9999
+                h_ins_comp[i] = 9999
+            VALUE -1,1:
+                tipo_pinza[i] = VAL($temp)
+                $temp = $DECODE($input, $sep,1)
+                
+                $temp = $DECODE($input, $sep,0)
+                p_pinza_x[i] = VAL($temp)
+                $temp = $DECODE($input, $sep,1)
+
+                $temp = $DECODE($input, $sep,0)
+                p_pinza_y[i] = VAL($temp)
+                $temp = $DECODE($input, $sep,1)
+
+                $temp = $DECODE($input, $sep,0)
+                p_pinza_z[i] = VAL($temp)
+                $temp = $DECODE($input, $sep,1)
+                
+                $temp = $DECODE($input, $sep,0)
+                p_pinza_ya[i] = VAL($temp)
+                $temp = $DECODE($input, $sep,1)
+
+                $temp = $DECODE($input, $sep,0)
+                p_pinza_p[i] = VAL($temp)
+                $temp = $DECODE($input, $sep,1)
+                
+                $temp = $DECODE($input, $sep,0)
+                p_pinza_r[i] = VAL($temp)
+                $temp = $DECODE($input, $sep,1)
+
+                $temp = $DECODE($input, $sep,0)
+                h_alim[i] = VAL($temp)
+                $temp = $DECODE($input, $sep,1)
+
+                $temp = $DECODE($input, $sep,0)
+                h_ins_comp[i] = VAL($temp)
+                $temp = $DECODE($input, $sep,1)
+            END   
+        END
+
+
+        FOR i = 1 TO 10
+            READ (disk) $input
+            ; TYPE "riga: ", $input
+
+            $temp = $DECODE($input, $sep,0)
+            $temp = $DECODE($input, $sep,1)
+
+            $temp = $DECODE($input, $sep,0)
+            $nulla = "null"
+            $tempc = $MID($temp,0,4)
+
+            CASE STRDIF($tempc,$nulla) OF
+            VALUE 0:
+                tipo_alim[i] = -1
+                $temp = $DECODE($input, $sep,1)
+                alim_x[i] = 9999
+                alim_y[i] = 9999
+                alim_z[i] = 9999
+                alim_ya[i] = 9999
+                alim_p[i] = 9999
+                alim_r[i] = 9999
+            VALUE -1,1:
+                tipo_alim[i] = VAL($temp)
+                $temp = $DECODE($input, $sep,1)
+
+                $temp = $DECODE($input, $sep,0)
+                alim_x[i] = VAL($temp)
+                $temp = $DECODE($input, $sep,1)
+
+                $temp = $DECODE($input, $sep,0)
+                alim_y[i] = VAL($temp)
+                $temp = $DECODE($input, $sep,1)
+
+                $temp = $DECODE($input, $sep,0)
+                alim_z[i] = VAL($temp)
+                $temp = $DECODE($input, $sep,1)
+                
+                $temp = $DECODE($input, $sep,0)
+                alim_ya[i] = VAL($temp)
+                $temp = $DECODE($input, $sep,1)
+
+                $temp = $DECODE($input, $sep,0)
+                alim_p[i] = VAL($temp)
+                $temp = $DECODE($input, $sep,1)
+                
+                $temp = $DECODE($input, $sep,0)
+                alim_r[i] = VAL($temp)
+                $temp = $DECODE($input, $sep,1)
+            END            
+        END
+
+        FOR i = 1 TO 2
+            READ (disk) $input
+            ; TYPE "riga: ", $input
+
+            $temp = $DECODE($input, $sep,0)
+            $temp = $DECODE($input, $sep,1)
+
+            $temp = $DECODE($input, $sep,0)
+            mag_x[i] = VAL($temp)
+            $temp = $DECODE($input, $sep,1)
+
+            $temp = $DECODE($input, $sep,0)
+            mag_y[i] = VAL($temp)
+            $temp = $DECODE($input, $sep,1)
+
+            $temp = $DECODE($input, $sep,0)
+            mag_z[i] = VAL($temp)
+            $temp = $DECODE($input, $sep,1)
+            
+            $temp = $DECODE($input, $sep,0)
+            mag_ya[i] = VAL($temp)
+            $temp = $DECODE($input, $sep,1)
+
+            $temp = $DECODE($input, $sep,0)
+            mag_p[i] = VAL($temp)
+            $temp = $DECODE($input, $sep,1)
+
+            $temp = $DECODE($input, $sep,0)
+            mag_r[i] = VAL($temp)
+            $temp = $DECODE($input, $sep,1)
+        END
+
+        READ (disk) $input
+        ; TYPE "riga: ", $input
+
+        $temp = $DECODE($input, $sep,0)
+        $temp = $DECODE($input, $sep,1)
+
+        $temp = $DECODE($input, $sep,0)
+        set_zero[0] = VAL($temp)
+        $temp = $DECODE($input, $sep,1)
+
+        $temp = $DECODE($input, $sep,0)
+        set_zero[1] = VAL($temp)
+        $temp = $DECODE($input, $sep,1)
+
+        $temp = $DECODE($input, $sep,0)
+        set_zero[2] = VAL($temp)
+        $temp = $DECODE($input, $sep,1)
+        
+        $temp = $DECODE($input, $sep,0)
+        set_zero[3] = VAL($temp)
+        $temp = $DECODE($input, $sep,1)
+
+        $temp = $DECODE($input, $sep,0)
+        set_zero[4] = VAL($temp)
+        $temp = $DECODE($input, $sep,1)
+
+        $temp = $DECODE($input, $sep,0)
+        set_zero[5] = VAL($temp)
+        $temp = $DECODE($input, $sep,1)
+
+      
+        GOTO 301
+
+   300  error = IOSTAT(disk)
+        TYPE "DISK I/O ERROR:    ", $ERROR(error)
+    301 FCLOSE (disk)
+        DETACH (disk)
+        
+
+
+; ARRAY DA CREARE: alim_join1, alim_join2, alim_join3, alim_join4, magazzino_sx, 
+; magazzino_dx, out_pinza_joint1 (2,3,4), presa_pinza_joint1 (2,3,4)
+; io creerei anche per le posizioni non scrite, in modo da evitare i 
+    ; ...................... reset ...........................
+
+        RESET
+        ss.step = 2001
+        ss.low.speed = 2002
+        ss.high.speed = 2003
+        ss.start = 2004
+        ss.aria = 2005
+        ss.fine.ciclo = 2010
+        bs.step = 2100
+        bs.start = 2101
+        bs.fine = 2102
+        bs.pendant = 2103
+        bs.skip = 2104
+        bs.anomalie = 2105
+        BITS 2001, 8 = 0
+        BITS 2100, 8 = 0
+        BITS 2108, 8 = 0
+        SIGNAL -ss.fine.ciclo
+    
+    ; ........................................................
+
+        RETURN
+
+.END
+; ##################################################### ;
+
+; ##### Programma per l'avvio della produzione # (600+) ##### ;
+.PROGRAM avvia_prod.v2(n_pezzi)
+        pinza_prec = 9999
+
+        CALL max_depart.v2()
+
+        SIGNAL bo.start.conv
+        CALL crt.wait(2)
+        SIGNAL bo.mount.end
+        CALL crt.wait(0.4)
+        SIGNAL -bo.mount.end 
+        CALL crt.wait(0.4)
+        FOR k = 1 TO n_pezzi
+            
+
+            WAIT (SIG(bi.pres.card) == -1) 
+            SIGNAL -bo.start.conv
+            CALL esegui_csv.v2(set_zero[0], set_zero[1], set_zero[2], set_zero[3], set_zero[4], set_zero[5])
+            call crt.wait(2)
+            SIGNAL bo.start.conv
+            call crt.wait(2)
+            SIGNAL bo.mount.end
+            CALL crt.wait(0.4)
+            SIGNAL -bo.mount.end 
+
+            TYPE "SCHEDAFINITA"
+        END
+
+        ;SIGNAL -bo.start.conv
+        
+        call lascia_pinza.v2(pinza_prec)
+.END
+; ##################################################### ;
+
+; ##### Programma per l'esecuzione di un file csv # (300+) ##### ;
+.PROGRAM esegui_csv.v2(zero_X, zero_Y, zero_Z, zero_ya, zero_p, zero_r)
+        AUTO disk, $fnome
+        LOCAL ieeof, file.size, error, $input, $temp, value[], i, cx, cy, cr
+
+        $fnome = "d:\dati.txt"
+        MCS "LOAD " +$fnome
+        ATTACH (disk, 4) "disk"
+        IF IOSTAT(disk) < 0 GOTO 300
+        file.size = IOSTAT(disk,2)
+        ieeof = -504 ;End-of-file error code
+        FOPENR (disk, 100, 2) $fnome
+        IF IOSTAT(disk) < 0 GOTO 300
+
+        READ (disk) $input
+        WHILE IOSTAT(disk) > 0 DO
+            ; type "input: ", $input
+            i = 1
+            WHILE  NOT ($input == "") DO
+                $temp = $DECODE($input,"|",0)
+                value[i] = VAL($temp)
+                $temp = $DECODE($input,"|",1)
+                i = i+1
+            END
+            IF (value[1] == 0) THEN
+                GOTO 301
+            END
+            ; TYPE "dati analizzati: ", value[1],  value[2], value[3], value[4], value[5]
+            IF (NOT (pinza_prec == value[1])) THEN
+                IF (NOT(pinza_prec == 9999)) THEN
+                    CALL lascia_pinza.v2(pinza_prec)
+                END
+                CALL prendi_pinza.v2(value[1])
+            END
+            CALL prendi_comp.v2(value[2], value[1])
+
+            cx = zero_X+value[3]
+            cy = zero_Y+value[4]
+            
+            IF 180-zero_r < value[5] THEN
+            cr = -180+value[5]-(180-zero_r)
+            ELSE
+            IF -180-zero_r > value[5] THEN
+            cr = 180+value[5]-(-180-zero_r)
+            ELSE
+            cr = zero_r+value[5]
+            END
+            END
+
+            CALL ins_comp.v2(cx, cy, zero_Z, cr, value[1])
+
+            pinza_prec = value[1] 
+            READ (disk) $input
+        END
+        IF NOT IOSTAT(disk) == ieeof THEN
+            TYPE /B, "I/O error ", $ERROR(IOSTAT(disk))
+        END
+        GOTO 301
+
+   300  error = IOSTAT(disk)
+        TYPE "DISK I/O ERROR:    ", $ERROR(error)
+    301 FCLOSE (disk)
+        DETACH (disk)
+    RETURN
+.END
+; ##################################################### ;
+
+; ######### Programma per la presa della pinza # (800+) ########## ;
+.PROGRAM prendi_pinza.v2(n_pinza)
+
+    ; DEFINIZIONE VARIABILI
+    LOCAL $errore, num_goto, vel_prenp, n_pinza_l, $nuovo_n_p, i_mg, y_out
+    num_goto = -1
+    vel_prenp = 70
+    riesegui = 0
+    ; FINE DEFINIZIONE VARIABILI
+
+    SINGLE ALWAYS
+
+    
+    802 IF (n_pinza > 0) AND (n_pinza < 11) THEN
+        SPEED vel_prenp ALWAYS
+        CALL max_depart.v2()
+        IF(p_pinza_r[n_pinza] == val_invalido) THEN
+            $errore = "Posizione della pinza non riconosciuta. Inserirla in posi.txt"
+            GOTO 800
+        END
+
+        IF (SIG(bi.pres.pinza) == -1) THEN
+            ; presenza pinza su supporto
+
+            $errore = "Presenza pinza su supporto"
+            call gestione_errore.v2($errore)
+            if (riesegui == 1) THEN
+                PROMPT "Numero della posizione dove depositare la pinza: ", $nuovo_n_p
+                n_pinza_l = VAL($nuovo_n_p)
+                call lascia_pinza.v2(n_pinza_l)
+
+                SPEED vel_prenp ALWAYS
+
+                GOTO 802
+            END
+
+        ELSE
+            IF SIG(bi.pinza.mag[n_pinza]) == -1 THEN
+                IF n_pinza < 6 THEN
+                    i_mg = 2
+                    y_out = 200
+                ELSE
+                    i_mg = 1
+                    y_out = -200
+                END
+
+                CALL predisp.v2(mag_y[i_mg])
+
+                ACCEL 100,100
+                MOVE TRANS(mag_x[i_mg],mag_y[i_mg],mag_z[i_mg],mag_ya[i_mg],mag_p[i_mg],mag_r[i_mg])
+                BREAK      
+                
+
+
+                810 IF (SIG(bi.aria) == 0) THEN
+                num_goto = 810
+                $errore = "Aria compressa mancante"
+                GOTO 800
+                END
+                num_goto = -1
+                SIGNAL -bo.paral.off, -bo.paral.on, -bo.inserz.comp     
+
+
+
+                811 IF (SIG(bi.aria) == 0) THEN
+                num_goto = 811
+                $errore = "Aria compressa mancante"
+                GOTO 800
+                END
+                num_goto = -1
+                SIGNAL -bo.blc.pinza, bo.sblc.pinza ; apertura pinza
+                
+
+                ACCEL 100,100
+                APPRO TRANS(p_pinza_x[n_pinza], p_pinza_y[n_pinza], p_pinza_z[n_pinza], p_pinza_ya[n_pinza], p_pinza_p[n_pinza], p_pinza_r[n_pinza]), 100
+                BREAK
+
+                ACCEL 90, 10
+                MOVE TRANS(p_pinza_x[n_pinza], p_pinza_y[n_pinza], p_pinza_z[n_pinza], p_pinza_ya[n_pinza], p_pinza_p[n_pinza], p_pinza_r[n_pinza])
+                BREAK
+
+
+                812 IF (SIG(bi.aria) == 0) THEN
+                num_goto = 812
+                $errore = "Aria compressa mancante"
+                GOTO 800
+                END
+                num_goto = -1
+                SIGNAL bo.blc.pinza, -bo.sblc.pinza ; chiusura pinza
+
+
+
+                CALL crt.wait(0.5)
+
+                ACCEL 30,90
+                MOVES TRANS(p_pinza_x[n_pinza], p_pinza_y[n_pinza]+y_out, p_pinza_z[n_pinza], p_pinza_ya[n_pinza], p_pinza_p[n_pinza], p_pinza_r[n_pinza])
+                BREAK
+
+                ACCEL 100,100
+                DEPART 100
+                BREAK
+                ACCEL 100,100
+                MOVE TRANS(mag_x[i_mg],mag_y[i_mg],mag_z[i_mg],mag_ya[i_mg],mag_p[i_mg],mag_r[i_mg])
+                BREAK
+
+
+
+                813 IF (SIG(bi.aria) == 0) THEN
+                num_goto = 813
+                $errore = "Aria compressa mancante"
+                GOTO 800
+                END
+                num_goto = -1
+                ; SIGNAL bo.paral.off, -bo.paral.on
+                CALL apri_pinza.v2(tipo_pinza[n_pinza])
+
+
+
+                call crt.wait(0.2)
+            ELSE
+                $errore = $ENCODE("Pinza ",n_pinza," mancante")
+                goto 800
+            END
+        END
+    ELSE
+        $errore = $ENCODE("Pinza ",n_pinza," non esistente")
+        call gestione_errore.v2($errore)
+        if (riesegui == 1) THEN
+            PROMPT "Nuovo numero della pinza: ", $nuovo_n_p
+            n_pinza = VAL($nuovo_n_p)
+            GOTO 802
+        END
+    END    
+    
+    goto 801
+
+    800 call gestione_errore.v2($errore)
+    IF (riesegui == 1) THEN
+        CASE num_goto OF
+            VALUE -1: 
+                GOTO 802
+            VALUE 810: 
+                GOTO 810
+            VALUE 811: 
+                GOTO 811
+            VALUE 812: 
+                GOTO 812
+            VALUE 813: 
+                GOTO 813
+        END
+    END
+
+    801 RETURN
+.END
+; ##################################################### ;
+
+; ######### Programma per il rilascio della pinza # (900+) ########## ;
+.PROGRAM lascia_pinza.v2(n_pinza)
+
+    
+    ; DEFINIZIONE VARIABILI
+    LOCAL $errore, num_goto, vel_lascp, i_mg, y_out, $nuovo_n_p
+     num_goto = -1
+     vel_lascp = 70
+    riesegui = 0
+    ; FINE DEFINIZIONE VARIABILI
+
+    SINGLE ALWAYS
+    
+    902 IF (n_pinza > 0) AND (n_pinza < 11) THEN
+        SPEED vel_lascp ALWAYS
+        CALL max_depart.v2()
+         IF(p_pinza_r[n_pinza] == val_invalido) THEN
+            $errore = "Posizione della pinza non riconosciuta. Inserirla in posi.txt"
+            GOTO 900
+        END
+
+        IF SIG(bi.pinza.mag[n_pinza]) == 0 THEN
+            IF n_pinza < 6 THEN
+                i_mg = 2
+                y_out = 200
+            ELSE
+                i_mg = 1
+                y_out = -200
+            END
+            CALL predisp.v2(mag_y[i_mg])
+            ACCEL 100,100
+            MOVE TRANS(mag_x[i_mg],mag_y[i_mg],mag_z[i_mg],mag_ya[i_mg],mag_p[i_mg],mag_r[i_mg])
+            BREAK    
+
+
+            910 IF (SIG(bi.aria) == 0) THEN
+                num_goto = 910
+                $errore = "Aria compressa mancante"
+                GOTO 900
+                END
+                num_goto = -1
+            ; SIGNAL bo.paral.off, -bo.paral.on ; apre la pinza
+            CALL apri_pinza.v2(tipo_pinza[n_pinza])
+
+
+            call crt.wait(0.2)
+
+
+
+
+            911 IF (SIG(bi.aria) == 0) THEN
+                num_goto = 911
+                $errore = "Aria compressa mancante"
+                GOTO 900
+                END
+                num_goto = -1
+            SIGNAL -bo.paral.off, -bo.paral.on, -bo.inserz.comp, -bo.test.ins
+
+            
+            ACCEL 100,100
+            APPRO TRANS(p_pinza_x[n_pinza], p_pinza_y[n_pinza]+y_out, p_pinza_z[n_pinza], p_pinza_ya[n_pinza], p_pinza_p[n_pinza], p_pinza_r[n_pinza]), 100
+            BREAK
+            ACCEL 100,100
+            MOVE TRANS(p_pinza_x[n_pinza], p_pinza_y[n_pinza]+y_out, p_pinza_z[n_pinza], p_pinza_ya[n_pinza], p_pinza_p[n_pinza], p_pinza_r[n_pinza])
+            BREAK
+            ACCEL 90, 10
+            MOVES TRANS(p_pinza_x[n_pinza], p_pinza_y[n_pinza], p_pinza_z[n_pinza], p_pinza_ya[n_pinza], p_pinza_p[n_pinza], p_pinza_r[n_pinza])
+            BREAK
+
+
+            912 IF (SIG(bi.aria) == 0) THEN
+                num_goto = 912
+                $errore = "Aria compressa mancante"
+                GOTO 900
+                END
+                num_goto = -1
+            SIGNAL -bo.blc.pinza, bo.sblc.pinza ; apertura pinza
+
+
+            CALL crt.wait(0.5)
+            ACCEL 100,100
+            DEPART 100
+            BREAK
+
+
+            913 IF (SIG(bi.aria) == 0) THEN
+                num_goto = 913
+                $errore = "Aria compressa mancante"
+                GOTO 900
+                END
+                num_goto = -1
+            SIGNAL -bo.blc.pinza, -bo.sblc.pinza
+
+
+
+            CALL crt.wait(0.2)
+            ACCEL 100,100
+            MOVE TRANS(mag_x[i_mg],mag_y[i_mg],mag_z[i_mg],mag_ya[i_mg],mag_p[i_mg],mag_r[i_mg])
+            BREAK
+        ELSE
+             $errore = $ENCODE("Posizione ",n_pinza," occupata")
+            call gestione_errore.v2($errore)
+            if (riesegui == 1) THEN
+                PROMPT "Nuovo numero della pinza: ", $nuovo_n_p
+                n_pinza = VAL($nuovo_n_p)
+                GOTO 902
+            END
+        END
+    ELSE
+        $errore = $ENCODE("Pinza ",n_pinza," non esistente")
+        call gestione_errore.v2($errore)
+        if (riesegui == 1) THEN
+            PROMPT "Nuovo numero della pinza: ", $nuovo_n_p
+            n_pinza = VAL($nuovo_n_p)
+            GOTO 902
+        END
+    END   
+    
+    goto 901
+
+    900 call gestione_errore.v2($errore)
+    IF (riesegui == 1) THEN
+        CASE num_goto OF
+            VALUE -1: 
+                GOTO 902
+            VALUE 910: 
+                GOTO 910
+            VALUE 911: 
+                GOTO 911
+            VALUE 912: 
+                GOTO 912
+            VALUE 913: 
+                GOTO 913
+        END
+    END
+
+    901 RETURN
+.END
+; ##################################################### ;
+
+; ######### Programma per la presa di un pezzo da un alimentatore (700+)########## ;
+.PROGRAM prendi_comp.v2(n_alim, n_pinza)
+
+    ; DEFINIZIONE VARIABILI
+    LOCAL num_goto, $errore, vel_prenc, $nuovo_n_p, n_pinza_l, o, i_mg, $nuovo_n_a
+    num_goto = -1
+    vel_prenc = 70
+    riesegui = 0
+    ; FINE DEFINIZIONE VARIABILI
+
+    SINGLE ALWAYS
+
+    702 IF (n_pinza > 0) AND (n_pinza < 11) THEN
+        SPEED vel_prenc ALWAYS
+        CALL max_depart.v2()
+
+        IF (SIG(bi.pres.pinza) == 0) THEN
+            ; mancata presenza pinza su supporto
+
+            $errore = "La pinza non si trova sul supporto"
+            call gestione_errore.v2($errore)
+            if (riesegui == 1) THEN
+                PROMPT "Numero della posizione dove prendere la pinza: ", $nuovo_n_p
+                n_pinza_l = VAL($nuovo_n_p)
+                call prendi_pinza.v2(n_pinza_l)
+                SPEED vel_prenc ALWAYS
+                GOTO 702
+            else
+                GOTO 701
+            end
+        END
+
+        IF (n_alim > 0) AND (n_alim < 11) THEN
+            
+            IF (SIG(bi.alim.vuoti) == -1 ) THEN
+                $errore = "Alimentatore vuoto"
+                GOTO 700
+            END
+            IF (alim_r[n_alim] == val_invalido) THEN
+                $errore = "Posizione dell'alimentatore non riconosciuta. Inserirla in posi.txt"
+                GOTO 700
+            END
+
+            IF n_alim < 6 THEN
+                i_mg = 2
+            ELSE
+                i_mg = 1
+            END
+            
+
+            o = 0
+            TYPE " Tentativo iniziale ", 0
+
+            WHILE (NOT(SIG(bi.alim.pos[n_alim]) == -1) AND (o < 5)) DO
+                TYPE " Tentativo mezzo inizio ", o
+                SIGNAL bo.alimenta.com[n_alim]
+                CALL crt.wait(0.2)
+                SIGNAL -bo.alimenta.com[n_alim]
+                CALL crt.wait(0.2)
+                o = o + 1
+                TYPE " Tentativo mezzo fine ", o
+            END
+            TYPE " Tentativo finale ", o
+
+
+            IF (SIG(bi.alim.pos[n_alim]) == -1) THEN
+            
+                CALL predisp.v2(mag_y[i_mg])
+                ACCEL 100,100
+                MOVE TRANS(mag_x[i_mg],mag_y[i_mg],mag_z[i_mg],mag_ya[i_mg],mag_p[i_mg],mag_r[i_mg])
+                BREAK
+
+
+                710 IF (SIG(bi.aria) == 0) THEN
+                    num_goto = 710
+                    $errore = "Aria compressa mancante"
+                    GOTO 700
+                    END
+                    num_goto = -1
+                
+                
+                CASE tipo_alim[n_alim] OF
+                    VALUE 2: ;pinza con aria
+                        CALL apri_pinza.v2(tipo_alim[n_alim])
+                    VALUE 1: ;pinza meccanica
+                        CALL chiudi_pinza.v2(tipo_alim[n_alim])
+                END 
+
+
+                CALL crt.wait(0.5)
+                ACCEL 100,100
+                APPRO TRANS(alim_x[n_alim], alim_y[n_alim], alim_z[n_alim]+h_alim[n_pinza], alim_ya[n_alim], alim_p[n_alim], alim_r[n_alim]), 50
+                BREAK
+
+                ACCEL 90, 10
+                MOVE TRANS(alim_x[n_alim], alim_y[n_alim], alim_z[n_alim]+h_alim[n_pinza], alim_ya[n_alim], alim_p[n_alim], alim_r[n_alim])
+                BREAK
+                CALL crt.wait(1) 
+
+
+
+                711 IF (SIG(bi.aria) == 0) THEN
+                    num_goto = 711
+                    $errore = "Aria compressa mancante"
+                    GOTO 700
+                    END
+                    num_goto = -1 
+                CALL chiudi_pinza.v2(tipo_alim[n_alim])
+
+
+
+
+                CALL crt.wait(0.5)
+
+                SIGNAL bo.taglio[n_alim]
+                DO
+                    WAIT ; taglio ok --- 0 (non ha tagliato), -1 (ha tagliato)
+                UNTIL SIG(bi.taglio.ok[n_alim])
+                SIGNAL -bo.taglio[n_alim]
+                CALL crt.wait(1)
+
+                CALL max_depart.v2()
+                ACCEL 100,100
+                MOVE TRANS(mag_x[i_mg],mag_y[i_mg],mag_z[i_mg],mag_ya[i_mg],mag_p[i_mg],mag_r[i_mg])
+                BREAK
+
+            ELSE
+                $errore = "Componente non presente per essere tagliato o aria compressa mancante"
+                GOTO 700
+            END
+
+        ELSE
+            $errore = $ENCODE("Alimentatore ",n_alim," non esistente")
+            call gestione_errore.v2($errore)
+            if (riesegui == 1) THEN
+                PROMPT "Nuovo numero dell'alimentatore", $nuovo_n_a
+                n_alim = VAL($nuovo_n_a)
+                GOTO 702
+            END
+        END
+
+    ELSE
+        $errore = $ENCODE("Pinza ",n_pinza," non esistente")
+        call gestione_errore.v2($errore)
+        if (riesegui == 1) THEN
+            PROMPT "Nuovo numero della pinza", $nuovo_n_p
+            n_pinza = VAL($nuovo_n_p)
+            GOTO 702
+        END
+    END    
+
+
+    goto 701
+
+    700 call gestione_errore.v2($errore)
+    if (riesegui == 1) THEN
+        CASE num_goto OF
+            VALUE -1: 
+                GOTO 702
+            VALUE 710: 
+                GOTO 710
+            VALUE 711: 
+                GOTO 711
+        END
+    END
+
+    701 RETURN
+.END
+; ##################################################### ;
+
+; ############### Programa per il delay ############### ;
+.PROGRAM crt.wait(t1)
+        AUTO t2
+        t2 = TIMER(2)
+        DO
+            WAIT
+        UNTIL (TIMER(2)-t2) > t1
+        RETURN
+.END
+; ##################################################### ;
+
+; ############### Programa per apertura pinza ############### ;
+.PROGRAM apri_pinza.v2(tipo_pinza)
+    CASE tipo_pinza OF
+    VALUE 2: ;pinza con aria
+        SIGNAL bo.paral.off, -bo.paral.on ; apre la pinza
+    VALUE 1: ;pinza meccanica
+        SIGNAL bo.inserz.comp
+    END 
+    RETURN
+.END
+; ##################################################### ;
+
+; ############### Programa per chiusura pinza ############### ;
+.PROGRAM chiudi_pinza.v2(tipo_pinza)
+    CASE tipo_pinza OF
+    VALUE 2: ;pinza con aria
+        SIGNAL -bo.paral.off, bo.paral.on ; chiuide la pinza
+    VALUE 1: ;pinza meccanica
+        SIGNAL -bo.inserz.comp
+    END
+    RETURN
+.END
+; ##################################################### ;
+
+; ############### Programa per inserire comp # (1000+)############### ;
+.PROGRAM ins_comp.v2(crd_x, crd_y, crd_z, crd_roll, n_pinza)
+
+    ; DEFINIZIONE VARIABILI
+    LOCAL num_goto, vel_lascc, $errore
+    num_goto = -1
+    vel_lascc = 70
+    riesegui = 0
+    inser = 0 
+    ; FINE DEFINIZIONE VARIABILI
+
+    SINGLE ALWAYS
+
+    1002 SPEED vel_lascc ALWAYS
+        CALL max_depart.v2()
+        CALL predisp.v2(crd_y)
+        LEFTY
+        ACCEL 100,100
+        APPRO TRANS(crd_x, crd_y, crd_z+h_ins_comp[n_pinza], 0.0, 180.0, crd_roll), 70
+        BREAK
+
+
+
+        1010 IF (SIG(bi.aria) == 0) THEN
+                num_goto = 1010
+                $errore = "Aria compressa mancante"
+                GOTO 1000
+                END
+                num_goto = -1 
+        
+        IF (tipo_pinza[n_pinza] == 2) THEN
+            SIGNAL bo.test.ins
+        END
+
+
+
+
+
+        CALL crt.wait(0.2)
+
+        ACCEL 90, 10
+        MOVE TRANS(crd_x, crd_y, crd_z+h_ins_comp[n_pinza], 0.0, 180.0, crd_roll)
+        BREAK
+
+
+        IF (tipo_pinza[n_pinza] == 2) THEN
+            IF (SIG(bi.test.ins) == 0) THEN
+                CALL ric_fori.v2(crd_x, crd_y, crd_z+h_ins_comp[n_pinza], 0.0, 180.0, crd_roll)
+                SPEED vel_lascc ALWAYS
+                TYPE "inser:", inser
+                IF (inser == 0)THEN 
+                    $errore = "Componente non inserito correttamente"
+                    CALL gestione_errore($errore)
+                    IF (riesegui == 1) THEN
+
+
+                        1011 IF (SIG(bi.aria) == 0) THEN
+                        num_goto = 1011
+                        $errore = "Aria compressa mancante"
+                        GOTO 1000
+                        END
+                        num_goto = -1 
+                        SIGNAL -bo.test.ins
+
+
+
+                        GOTO 1002
+                    ELSE
+                        GOTO 1013
+                    END
+                END
+            END
+        END
+
+        CALL crt.wait(0.5)
+
+        1012 IF (SIG(bi.aria) == 0) THEN
+                num_goto = 1012
+                $errore = "Aria compressa mancante"
+                GOTO 1000
+                END
+                num_goto = -1 
+        CALL apri_pinza.v2(tipo_pinza[n_pinza])
+
+        CALL crt.wait(0.5)
+
+        CALL max_depart.v2()
+
+
+    1013 IF (SIG(bi.aria) == 0) THEN
+        num_goto = 1013
+        $errore = "Aria compressa mancante"
+        GOTO 1000
+        END
+        num_goto = -1 
+    SIGNAL -bo.test.ins
+        
+    GOTO 1001
+
+    1000 call gestione_errore.v2($errore)
+    if (riesegui == 1) THEN
+        CASE num_goto OF
+            VALUE -1: 
+                GOTO 1002
+            VALUE 1010: 
+                GOTO 1010
+            VALUE 1011: 
+                GOTO 1011
+            VALUE 1012: 
+                GOTO 1012
+            VALUE 1013: 
+                GOTO 1013
+        END
+    END
+
+    1001 RETURN
+.END
+; ##################################################### ;
+
+; ##### Programa per effettuare il depart massimo ####### ;
+.PROGRAM max_depart.v2()
+    ACCEL 50,100
+    HERE #ref
+    DECOMPOSE coord[] = #ref
+    DEPART(coord[2]-25) ;altezza massima
+    BREAK
+    RETURN
+.END
+; ##################################################### ;
+
+; ##### Programa per movere il joint 2 ####### ;
+.PROGRAM predisp.v2(y)
+    SINGLE ALWAYS
+    ACCEL 100,100
+    HERE #ref
+    DECOMPOSE coord[] = #ref
+    ;SPEED 70 ALWAYS
+    IF ((y>0) AND (coord[1]<0)) THEN
+        MOVE #PPOINT(coord[0], 1.0, coord[2], coord[3])
+        BREAK
+    ELSE 
+        IF ((y<0) AND (coord[1]>0)) THEN
+            MOVE #PPOINT(coord[0], -1.0, coord[2], coord[3])
+            BREAK
+        END
+    END
+.END
+; ##################################################### ;
+
+; ############### Programa per gestione errori ############### ;
+.PROGRAM gestione_errore.v2($errore)
+
+    LOCAL $risposta
+
+    SIGNAL bo.lamp.rosso
+    type "ERRORE: ", $errore
+    ;CALL crt.wait(5)
+    
+
+    DO
+    PROMPT "Saltare l'azione (Y/N)? ", $risposta
+    UNTIL (($risposta == "Y") OR ($risposta == "N"))
+
+
+    IF ($risposta == "Y") THEN
+        riesegui = 0
+    ELSE
+        riesegui = 1
+    END
+
+    SIGNAL -bo.lamp.rosso
+
+    RETURN
+.END
+; ##################################################### ;
+
+; ############### Programma per la ricerca dei fori ############### ;
+.PROGRAM ric_fori.v2(ric_x, ric_y, ric_z, ric_ya, ric_p, ric_r)
+    ;andiamo a dx, sx, alto, alto-dx, alto-sx, basso, b-sx, b-dx
+
+    LOCAL range_x, range_y, range_angle, dep
+    range_x = 10
+    range_y = 10
+    range_angle = 1
+    dep = 20
+    inser = 0
+
+    ;call crt.wait(30)
+
+    SPEED 170 ALWAYS
+
+    SIGNAL bo.test.ins
+
+    FOR ric_a = -range_x TO range_x
+        FOR ric_i = -range_y TO range_y
+            FOR ric_w = -range_angle TO range_angle
+                ;TYPE "X: ",  (ric_x+(ric_a/10)), " Y: ", (ric_y+(ric_i/10))
+                DEPART dep
+                APPRO TRANS(ric_x+(ric_a/10),ric_y+(ric_i/10),ric_z,ric_ya,ric_p,ric_r+ric_w), dep
+                BREAK
+                ACCEL 90,10
+                MOVES TRANS(ric_x+(ric_a/10),ric_y+(ric_i/10),ric_z,ric_ya,ric_p,ric_r+ric_w)
+                BREAK
+                ACCEL 100,100
+                CALL crt.wait(0.1)
+
+                IF SIG(bi.test.ins) THEN
+                    inser = 1
+                    SIGNAL -bo.test.ins
+                    TYPE "COMPONENTE INSERITO! ", inser
+                    RETURN
+                END
+            END
+        END
+
+    END
+
+    SIGNAL -bo.test.ins
+    RETURN
+
+
+.END
+; ##################################################### ;
+
+; ############### Programma per la ricerca dei fori ############### ;
+.PROGRAM cer_fori.v2(ric_x, ric_y, ric_z, ric_ya, ric_p, ric_r)
+    ;andiamo a dx, sx, alto, alto-dx, alto-sx, basso, b-sx, b-dx
+    inser = 0
+
+    ;call crt.wait(30)
+
+    SIGNAL bo.test.ins
+
+    FOR cer_sec = 1 TO 5
+        ;TYPE "*** CICLO ", cer_sec, ": "
+        ;TYPE "----Primo ciclo----"
+        FOR cer_ind = (-(cer_sec-1)) TO cer_sec
+            FOR ric_w = -1 TO 1
+                CALL pr_foro(ric_x-(cer_sec/10),ric_y-(cer_ind/10),ric_z,ric_ya,ric_p,ric_r+ric_w)
+                CALL crt.wait(0.1)
+
+                IF SIG(bi.test.ins) THEN
+                    inser = 1
+                    SIGNAL -bo.test.ins
+                    TYPE "COMPONENTE INSERITO! ", inser
+                    RETURN
+                END
+            END
+        END
+        ;TYPE "-----------"
+
+        ;TYPE "-----Secondo ciclo------"
+        FOR cer_ind = (-(cer_sec-1)) TO cer_sec
+            FOR ric_w = -1 TO 1
+                CALL pr_foro(ric_x+(cer_ind/10),ric_y-(cer_sec/10),ric_z,ric_ya,ric_p,ric_r+ric_w)
+                CALL crt.wait(0.1)
+
+                IF SIG(bi.test.ins) THEN
+                    inser = 1
+                    SIGNAL -bo.test.ins
+                    TYPE "COMPONENTE INSERITO! ", inser
+                    RETURN
+                END
+            END
+        END
+        ;TYPE "-----------"
+
+        ;TYPE "-----Terzo ciclo------"
+        FOR cer_ind = (-(cer_sec-1)) TO cer_sec
+            FOR ric_w = -1 TO 1
+                CALL pr_foro(ric_x+(cer_sec/10),ric_y+(cer_ind/10),ric_z,ric_ya,ric_p,ric_r+ric_w)
+                CALL crt.wait(0.1)
+
+                IF SIG(bi.test.ins) THEN
+                    inser = 1
+                    SIGNAL -bo.test.ins
+                    TYPE "COMPONENTE INSERITO! ", inser
+                    RETURN
+                END
+            END
+        END
+        ;TYPE "-----------"
+
+        ;TYPE "-----Quarto ciclo------"
+        FOR cer_ind = (-(cer_sec-1)) TO cer_sec
+            FOR ric_w = -1 TO 1
+                CALL pr_foro(ric_x-(cer_ind/10),ric_y+(cer_sec/10),ric_z,ric_ya,ric_p,ric_r+ric_w)
+                CALL crt.wait(0.1)
+
+                IF SIG(bi.test.ins) THEN
+                    inser = 1
+                    SIGNAL -bo.test.ins
+                    TYPE "COMPONENTE INSERITO! ", inser
+                    RETURN
+                END
+            END
+        END
+        ;TYPE "-----------"
+        ;TYPE "************************"
+    END
+    
+
+    SIGNAL -bo.test.ins
+    RETURN
+
+
+.END
+; ##################################################### ;
+
+; ############### Programma per provare un foro ############### ;
+.PROGRAM pr_foro(prf_x, prf_y, prf_z, prf_ya, prf_p, prf_r)
+    ;TYPE "X: ",  (prf_x), " Y: ", (prf_y)
+    DEPART 7
+    APPRO TRANS(prf_x, prf_y, prf_z, prf_ya, prf_p, prf_r), 7
+    BREAK
+    MOVES TRANS(prf_x, prf_y, prf_z, prf_ya, prf_p, prf_r)
+    BREAK
+.END
+; ##################################################### ;

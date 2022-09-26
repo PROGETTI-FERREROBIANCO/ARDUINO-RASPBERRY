@@ -1,0 +1,75 @@
+.PROGRAM ftp.v2()
+    ;DEPRECATO        
+        LOCAL errorftp, $in.strftp, $nomeftp
+        AUTO diskftp, $fnomeftp
+        AUTO statusftp, no_waitftp, handleftp, lunftp ;inizializzione variabili locali
+        
+        ATTACH (lunftp,4) "TCP"
+        FOPEN (lunftp, 16) "/LOCAL_PORT 2001 /CLIENTS 5 /BUFFER_SIZE 4096" ;apertura del server TCP
+        IF IOSTAT (lunftp) < 0 THEN ;verifica della corretta apertura
+            ;TYPE "Attach error: ", $ERROR(IOSTAT(lunftp))
+        END
+        no_waitftp = 0 ;serve per rendere la read bloccante (1 significa non bloccante)
+    104 READ (lunftp, handleftp, no_waitftp) $in.strftp 
+        statusftp = IOSTAT(lunftp)
+        ;TYPE "statusftp: ", statusftp
+    102 CASE statusftp OF
+        VALUE 100: ;New connection opened
+        ;TYPE "New connection established. Handle =", handleftp
+        WRITE(lunftp, handleftp) "OK:connnessione stabilita"
+
+        READ (lunftp, handleftp, no_waitftp) $nomeftp
+        statusftp = IOSTAT(lunftp)
+        IF statusftp == 1 THEN
+            ;TYPE "Nome ricevuto: ", $nomeftp
+            WRITE(lunftp, handleftp) "OK:Nome file ricevuto"
+        ELSE
+            WRITE (lunftp) "ERRORE:Nome file ricevuto"
+            GOTO 102
+        END
+
+        ; ............... apertura file ...................
+        
+        $fnomeftp = "d:\" + $nomeftp
+        ;TYPE "fnomeftp: ", $fnomeftp
+        ATTACH (diskftp, 4) "disk"
+        IF IOSTAT(diskftp) < 0 GOTO 103
+        
+        FDELETE(diskftp) $fnomeftp
+        FOPENW (diskftp, 100, 2) $fnomeftp
+        IF IOSTAT(diskftp) < 0 GOTO 103
+
+        
+    100  READ (lunftp, handleftp, no_waitftp) $in.strftp
+        statusftp = IOSTAT(lunftp)
+        IF statusftp == 1 THEN
+            ;TYPE "Messaggio ricevuto: ", $in.strftp
+            WRITE  (diskftp) $in.strftp
+            WRITE (lunftp) "OK:Riga file ricevuta"
+            GOTO 100
+        ELSE
+            WRITE (lunftp) "ERRORE:Dati ricevuti"
+            GOTO 102
+        END   
+
+
+        VALUE 101: ;Connection closed
+        ;TYPE "Connection closed. Handle =", handleftp
+        VALUE -526: ;No data received
+        ;TYPE "No data received"
+        WAIT
+        ANY ;Some other error
+        ;TYPE "Error during READ: ", $ERROR(statusftp)
+        ;FCLOSE(lunftp)
+        END
+
+
+   103  errorftp = IOSTAT(diskftp)
+        ;TYPE "diskftp I/O ERROR:    ", $ERROR(errorftp)
+        WRITE (lunftp) "ERRORE:Apertura del file ("+$ERROR(errorftp)+")"
+        FCLOSE (diskftp)
+        DETACH (diskftp)
+        FCLOSE(lunftp)
+        DETACH(lunftp)
+
+.END    

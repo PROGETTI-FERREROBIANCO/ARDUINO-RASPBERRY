@@ -1,0 +1,35 @@
+.PROGRAM mv_rob.v2(x_mr,y_mr,z_mr,ya_mr,p_mr,r_mr)
+    LOCAL h_finalemr
+    SPEED 70 ALWAYS
+
+    HERE #refmr
+    DECOMPOSE coordmr[] = #refmr
+    h_finalemr = coordmr[2]-25
+
+    ACCEL 100,100
+    DEPART(h_finalemr) ;altezza massima
+    BREAK
+
+    HERE #refmr
+    DECOMPOSE coordmr[] = #refmr
+    
+    IF ((y_mr>0) AND (coordmr[1]<0)) THEN
+        ACCEL 100,100
+        MOVE #PPOINT(coordmr[0], 1.0, coordmr[2], coordmr[3])
+        BREAK
+    ELSE 
+        IF ((y_mr<0) AND (coordmr[1]>0)) THEN
+            ACCEL 100,100
+            MOVE #PPOINT(coordmr[0], -1.0, coordmr[2], coordmr[3])
+            BREAK
+        END
+    END
+    
+    h_finalemr = 368
+    ACCEL 100,100
+    MOVE TRANS(x_mr,y_mr,h_finalemr,ya_mr,p_mr,r_mr)
+    BREAK
+    ACCEL 100,100
+    MOVE TRANS(x_mr,y_mr,z_mr,ya_mr,p_mr,r_mr)
+    BREAK
+.END

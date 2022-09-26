@@ -1,0 +1,1225 @@
+<!doctype html>
+<html>
+<head>
+    <!-- Required meta tags -->
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <!-- Bootstrap CSS -->
+    <link rel="stylesheet" href="/static/css/jquery-ui.css">
+    <link rel="stylesheet" href="/static/css/jquery-ui.structure.css">
+    <link rel="stylesheet" href="/static/css/jquery-ui.theme.css">
+    <link href="/static/css/bootstrap.min.css" rel="stylesheet">
+    <script src="/static/js/jquery-3.6.0.min.js"></script>
+    <script src="/static/js/jquery-ui.js"></script>
+    <style>
+@font-face {
+  font-family: 'MyWebFont';
+  src: url('/static/font/Anek_Telugu/static/AnekTelugu/AnekTelugu-VariableFont_wdth,wght.ttf') /* Safari, Android, iOS */
+}
+    </style>
+    <!-- <link href="/static/css/bootstrap.min.css" rel="stylesheet" integrity="sha384-1BmE4kWBq78iYhFldvKuhfTAU6auU8tT94WrHftjDbrCEXSU1oBoqyl2QvZ6jIW3" crossorigin="anonymous"> -->
+
+    <title>Cella {{id_cella}} Control Panel</title>
+    <style>
+.center-screen {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    text-align: center;
+}
+#div_sx_cella{
+    /*font-family: 'MyWebFont';*/
+    width: 59%;
+    float: left;
+    margin-top: 1%;
+    margin-left: 2%;
+    height: auto;
+
+}
+#div_dx_cella{
+    width: 38%;
+    height: auto;
+    float: right;
+    margin-top: 1%;
+
+}
+.button_comandi{
+  background-color: #BBDEF0;
+}
+td{
+  align-items: center;
+}
+.cnv_coord{
+  outline:#00A6A6 0.3rem solid;
+}
+.inputconnetti{
+  background-color: white;
+  border-color: none;
+}
+
+fieldset { padding:0; border:0; margin-top:25px; }
+.ui-dialog .ui-state-error { padding: .3em; }
+.validateTips { border: 1px solid transparent; padding: 0.3em; }
+.switch {
+  position: relative;
+  display: inline-block;
+  width: 10px;
+  height: 10px;
+}
+
+.switch input { 
+  opacity: 0;
+  width: 0;
+  height: 0;
+}
+
+    </style>
+
+<script>var var_comunicazione = "UDP";var id_cella = {{id_cella}}</script>
+
+</head>
+
+<body style="background-color:#f8f7f7" onload="main();">
+  <nav class="navbar navbar-expand-lg navbar-light" style="border-color:#00A6A6">  
+    <div class="collapse navbar-collapse" id="navbarSupportedContent">
+      <ul class="navbar-nav mr-auto" id="ul_barra_iniziale">
+        <li class="nav-item active">
+          <a class="nav-link" href="/">Home</a>
+        </li>
+      </ul>
+    </div>
+  </nav>
+
+
+  <script>
+
+      function crea_barra(lista_numeri){
+        var stringa_b_i = "";
+        for (const [key, value] of Object.entries(lista_numeri)) {
+          stringa_b_i += '</li><li class="nav-item"><a class="nav-link" href="/cella?id_cella='+key+'" target="_blank">Cella '+key+'</a></li>'
+        }
+        document.getElementById("ul_barra_iniziale").innerHTML +=stringa_b_i;
+      }
+
+  </script>
+
+
+  <div class="alert alert-success" role="alert" style="display: none;" id="div_alert"></div>
+
+
+  
+  {%if eConnesso %}
+  <h2 align="center" style="color: #00A6A6;">Pannello di controllo <b>cella {{id_cella}}</b></h2>
+  <div>
+    <div style="float:right; margin-right: 2%;">
+      <table class="table table-borderless"><tr>
+      <td><button type="button" class="btn button_comandi" value="DOWNLOAD" name="comando" id="download_button">DOWNLOAD</button></td>
+      <td align="center">
+        <form enctype = "multipart/form-data" onsubmit="return false;" >
+          <input type="file" name="fileupload" id="fileupload"/>
+          <button type="button" class="btn button_comandi" value="UPLOAD" name="comando" onclick="upload_file(this.form, '/upload?id_cella={{id_cella}}')">UPLOAD</button>
+        </form>
+        </td>
+      <td><button class="btn btn-warning"><a href="/calibrazione?id_cella={{id_cella}}" target="_blank" style="text-decoration:none; color: black;">CALIBRAZIONE</a></button></td>
+      <td><form action="" method="post"><button type="submit" class="btn btn-dark" name="comando" value="DISCONNETTI" id="disconnetti_btn">DISCONNETTI</button></form></td>
+      </tr></table>
+      </div>
+    <div id="div_sx_cella">
+      <div>
+        <textarea id="shell_cella" style="width: 90%; height: 25rem; resize: none; border-color: #F49F0A; border-width: 0.3rem; font-family: 'Courier New', Courier, monospace;" readonly></textarea>
+          <br>
+          <div id="casellaTesto" align="center" style="width: 90%;">
+            <div class="input-group input-group-lg">
+                <span class="input-group-text" style="background-color: #00A6A6;" id="inputGroup-sizing-lg">comando:</span>
+                <input type="text" id="input_comando" placeholder="comando" name="valore" class="form-control" aria-label="Sizing example input" aria-describedby="inputGroup-sizing-lg" autocomplete="off">
+                <button type="button" id="commit_button" class="btn" style="background-color: #00A6A6;" value="SHELL" name="comando">conferma</button>
+                <button type="button" class="btn btn-lg button_comandi" value="!ff 44 44 5c 00 02 00 1b 00 00 00 00" name="valore" id="esc_button">ESC</button>
+                <button type="button" class="btn btn-lg button_comandi" style="width:max-content;" value="!ff 44 44 74 00 02 00 03 00 00 00 00" name="valore" id="ctrlc_button">CTRL C</button>
+                <button type="button" class="btn btn-warning" name="comando" value="CLEAR" onclick="pulisci_canvas()">CLEAR</button>
+            </div>
+            </div>
+      </div>
+      <br>
+      <div>
+        <table class="table table-borderless" style="width: 100%;">
+        <tr><th colspan="6">Vista robot</th></tr>
+        <tr><td>Asse 1-2</td><td id="val_asse_1"></td><td>Asse 3</td><td id="val_asse_3"></td><td>Asse 4</td><td id="val_asse_4"></td></tr>
+        <tr>
+          <td colspan="2"><canvas id="canvas1" class="cnv_coord" style="width: 80%;"></canvas></td>
+          <td colspan="2"><canvas id="canvas2" class="cnv_coord" style="width: 80%;"></canvas></td>
+          <td colspan="2"><canvas id="canvas3" class="cnv_coord" style="width: 80%;"></canvas></td>
+        </tr>
+      </table>
+    </div>
+          
+    </div>
+    <div id="div_dx_cella">
+      <div>
+        <h3>GESTIONE PRODUZIONE</h3>
+        <p>Questa sezione permette di gestire una nuova produzione sulla macchina.</p>
+        <table class="table">
+            <tr>
+              <td><button type="button" class="btn button_comandi" value="START" name="comando" id="btn_start">START</button></td>
+              <td><button type="button" class="btn button_comandi" value="STOP" name="comando" id="btn_stop">STOP</button></td>
+              <td>
+                <form enctype = "multipart/form-data" onsubmit="return false;" >
+                  <input type="file" name="fileupload" accept=".csv"/>
+                  <button type="button" class="btn button_comandi" value="UPLOAD CSV" name="comando" onclick="upload_file(this.form, '/upload_programma?id_cella={{id_cella}}')">UPLOAD CSV</button>
+                </form>
+              </td>
+            </tr>
+          </table>
+          <br><br>
+          <h3>GESTIONE INFORMAZIONI</h3>
+          <p>Questa sezione permette di avere alcune informazioni sui sensori e sulla posizione del robot.</p>
+          <table class="table" align="center">
+            <tr>
+              <td colspan="2"><div class="input-group input-group-lg">
+                <div class="input-group-prepend">
+                  <label class="input-group-text" for="inputGroupOutput" style="background-color: #F49F0A;">Output:</label>
+                </div>
+                <select class="custom-select" id="inputGroupOutput" onchange="cambiaOuput()">
+                  <option value="1" selected>Start/Stop convogliatore</option>
+                  <option value="2">Apri/Chiudi pinza</option>
+                  <option value="3">Prendi/Lascia pinza</option>
+                  <option value="4">Start/Stop inserimento componente</option>
+                  <option value="5">Fine montaggio componenti scheda</option>
+                </select>
+                <div class="input-group-append">
+                  <button class="btn" type="button" id="btn_output_start" style="background-color: #F49F0A;">start</button>
+                </div>
+                <div class="input-group-append">
+                  <button class="btn btn-outline-secondary" type="button" id="btn_output_stop">stop</button>
+                </div>
+              </div></td>
+            </tr>
+            <tr>
+              <td><button type="button" class="btn button_comandi" value="START INFO" onclick="creazione_ws_info();" name="comando">START INFO</button></td>
+              <td><button type="button" class="btn button_comandi" value="STOP_INFO" name="comando" id="btn_stop_info">STOP INFO</button></td>
+            </tr>
+          </table>
+          <br>
+          <table class="table table-bordered" id="tbl_sensori" style="background-color: #eb9696; margin-right: 5%;"></table>
+      </div>
+    </div>
+  </div>
+  <br>
+
+  <div id="dialog-schede" title="-Produzione- numero di schede">
+      <span class="slider"></span>
+    </label><br>
+      <fieldset>
+        <div align="center" class="center-screen">
+          <label for="n_schede">Inserire il numero di schede da produrre:</label>
+          <input type="number" name="n_schede" id="n_schede" value="" class="text ui-widget-content ui-corner-all">
+        </div>
+        <!-- Allow form submission with keyboard without duplicating the dialog button -->
+        <input type="submit" tabindex="-1" style="position:absolute; top:-1000px">
+      </fieldset>
+  </div>
+
+  <div id="dialog-download" title="-Download- Nome del file">
+    <span class="slider"></span>
+  </label><br>
+    <fieldset>
+      <div align="center" class="center-screen">
+        <label for="input_file_da_scaricare">Inserire il nome del file da scaricare:</label>
+        <input type="text" name="input_file_da_scaricare" id="input_file_da_scaricare" value="" class="text ui-widget-content ui-corner-all">
+      </div>
+      <!-- Allow form submission with keyboard without duplicating the dialog button -->
+      <input type="submit" tabindex="-1" style="position:absolute; top:-1000px">
+    </fieldset>
+</div>
+  
+
+  <script>
+
+    var etichette_sensori = {1001: "Componente inserito correttamente",
+                              1002: "Blocco pinza aperta",
+                              1003: "Pinza montata",
+                              1004: "Presenza aria compressa",
+                              1005: "Pulsante emergenza attivo",
+                              1006: "Scheda pronta per il montaggio",
+                              1007: "",
+                              1008: "Errore convogliatore",
+                              1009: "-",
+                              1010: "-",
+                              1011: "-",
+                              1012: "-",
+                              1033: "-",
+                              1034: "Pinza su supporto 1",
+                              1035: "Pinza su supporto 2",
+                              1036: "Pinza su supporto 3",
+                              1037: "Pinza su supporto 4",
+                              1038: "Pinza su supporto 5",
+                              1039: "Pinza su supporto 6",
+                              1040: "Pinza su supporto 7",
+                              1041: "Pinza su supporto 8",
+                              1042: "Pinza su supporto 9",
+                              1043: "Pinza su supporto 10",
+                              1044: "Alimentatore/i vuoto/i",
+                              1045: "Alimentatore 1 attivo",
+                              1046: "Alim 1: componente tagliato",
+                              1047: "Alimentatore 2 attivo",
+                              1048: "Alim 2: componente tagliato",
+                              1049: "Alimentatore 3 attivo",
+                              1050: "Alim 3: componente tagliato",
+                              1051: "Alimentatore 4 attivo",
+                              1052: "Alim 4: componente tagliato",
+                              1053: "Alimentatore 5 attivo",
+                              1054: "Alim 5: componente tagliato",
+                              1055: "Alimentatore 6 attivo",
+                              1056: "Alim 6: componente tagliato",
+                              1057: "Alimentatore 7 attivo",
+                              1058: "Alim 7: componente tagliato",
+                              1059: "Alimentatore 8 attivo",
+                              1060: "Alim 8: componente tagliato",
+                              1061: "Alimentatore 9 attivo",
+                              1062: "Alim 9: componente tagliato",
+                              1063: "Alimentatore 10 attivo",
+                              1064: "Alim 10: componente tagliato"
+                              }
+
+
+    var history_comandi = [];
+    var indice_history_comandi = 0;
+    var richieste_oc_cella;
+    var r_occupa_cella;
+    var request;
+    var ws_info;
+    var ricreare_ws_info = false;
+    var input = document.getElementById("input_comando");
+
+
+    input.addEventListener("keydown", function (e) {
+        if (e.key === "Enter") {  
+          indice_history_comandi = 0;
+          var ultimo_comando = document.getElementById("input_comando").value
+          if (ultimo_comando.length > 1)  history_comandi.push(ultimo_comando);
+          document.getElementById("commit_button").click();
+          document.getElementById("input_comando").value = '';
+        }
+      });
+
+    function cambiaOuput(){
+      let valore = parseInt(document.getElementById("inputGroupOutput").value);
+      switch(valore) {
+        case 1:
+          document.getElementById("btn_output_start").innerHTML = "start"
+          document.getElementById("btn_output_stop").innerHTML = "stop"
+          break;
+        case 2:
+          document.getElementById("btn_output_start").innerHTML = "apri"
+          document.getElementById("btn_output_stop").innerHTML = "chiudi"
+          break;
+        case 3:
+          document.getElementById("btn_output_start").innerHTML = "prendi"
+          document.getElementById("btn_output_stop").innerHTML = "lascia"
+          break;
+        case 4:
+          document.getElementById("btn_output_start").innerHTML = "start"
+          document.getElementById("btn_output_stop").innerHTML = "stop"
+          break;
+        case 5:
+          document.getElementById("btn_output_start").innerHTML = "attivo"
+          document.getElementById("btn_output_stop").innerHTML = "disattivo"
+        break;
+      } 
+
+    }
+
+
+    // Bind to the submit event of our form
+    $("#ctrlc_button, #esc_button, #commit_button, #btn_stop, #btn_stop_info, #btn_output_start, #btn_output_stop").click(function(event){
+      
+      var valore = document.getElementById(this.id).value;
+      var comando = "SHELL";
+      console.log(valore);
+    
+      // Prevent default posting of form - put here to work in case of errors
+      event.preventDefault();
+
+      // Abort any pending request
+      //if (request) request.abort();
+      if(this.id != "btn_output_stop" && this.id != "btn_output_start"){
+        if (valore == "SHELL") {
+          valore = document.getElementById("input_comando").value;
+          console.log("comando ricevuto: "+valore);
+        }
+        else if (valore == "DOWNLOAD"){
+          comando = "DOWNLOAD"
+          valore = prompt("Inserire il nome del file da scaricare: ");
+          if(valore == null) return;
+        }
+        else if(valore == "STOP" || valore == "STOP_INFO"){
+          comando = valore;
+          if(valore == "STOP_INFO"){
+            ricreare_ws_info = false;
+            ws_info.close();
+            crea_tbl_sensori();
+            for(let a = 1; a < 4; a++){
+              var c = document.getElementById("canvas"+a);
+              var ctx = c.getContext("2d");
+              ctx.beginPath();
+              ctx.clearRect(0, 0, c.width, c.height);
+            }
+
+          }
+        }
+      }else{
+        comando = "SHELL"
+        let valore_ouput = parseInt(document.getElementById("inputGroupOutput").value)
+        if(this.id == "btn_output_start"){
+          switch(valore_ouput) {
+          case 1:
+            valore = "SIGNAL 1"
+            break;
+          case 2:
+            valore = "SIGNAL 38, -39" //apri pinza
+            break;
+          case 3:
+            valore = "SIGNAL -35,34"
+            break;
+          case 4:
+            valore = "SIGNAL 33"
+            break;
+          case 5:
+            valore = "SIGNAL 3"
+          break;
+          } 
+        }else{
+          switch(valore_ouput) {
+          case 1:
+            valore = "SIGNAL -1"
+            break;
+          case 2:
+            valore = "SIGNAL -38, 39" //chiudi pinza
+            break;
+          case 3:
+            valore = "SIGNAL -38,-39,35,-34"
+            break;
+          case 4:
+            valore = "SIGNAL -33"
+            break;
+          case 5:
+            valore = "SIGNAL -3"
+          break;
+          } 
+        }
+      }
+      
+      if(comando=="SHELL"){
+          comando +="_"+var_comunicazione
+        }
+      var inputs = "comando="+comando+"&valore="+valore;
+      console.log("input: "+inputs)
+      inputs = inputs.replaceAll("+", "%2B")
+
+      request = $.ajax({
+          url: "/cella?id_cella="+id_cella,
+          type: "post",
+          data: inputs
+      });
+
+      // Callback handler that will be called on success
+      request.done(function (response, textStatus, jqXHR){
+        console.log("risposta: "+response)
+        if (response != "OK"){
+            if (response.includes("___QUESTOÈUNDOWNLOAD___")){
+
+            response = response.replace("___QUESTOÈUNDOWNLOAD___", "")
+
+            var blob = new Blob ([response], {"type": "text/plain"});
+            var a = document.createElement ('a');
+            a.download = valore;
+            a.href = window.URL.createObjectURL (blob);
+            a.click ();
+            //alert ('Data saved');
+            }else{
+            document.getElementById("div_alert").innerHTML = "Errore! "+response;
+            document.getElementById("div_alert").classList.replace("alert-success", "alert-danger");
+            document.getElementById("div_alert").style.display = "block";
+
+            const do_sleep = async() => {
+              await sleep(5000);
+              document.getElementById("div_alert").style.display = "none";
+            }
+            do_sleep()
+            }
+          }
+      });
+
+      // Callback handler that will be called on failure
+      request.fail(function (jqXHR, textStatus, errorThrown){
+          // Log the error to the console
+          console.error(
+              "The following error occurred: "+
+              textStatus, errorThrown
+          );
+      }); });
+
+    window.onbeforeunload = function (e) {
+        //e = e || window.event;
+        request = $.ajax({
+        url: "/cella?id_cella="+id_cella,
+        type: "post",
+        data: "comando=DISCONNETTI"
+        });
+    };
+
+    window.onunload = function (e) {
+        //e = e || window.event;
+        request = $.ajax({
+        url: "/cella?id_cella="+id_cella,
+        type: "post",
+        data: "comando=DISCONNETTI"
+        });
+        document.getElementById("disconnetti_btn").click()
+    };
+
+    document.addEventListener('keydown', (e) => {
+      e = e || window.event;
+      if(history_comandi.length > 0){
+        if (e.keyCode === 38) {
+          console.log('up arrow pressed')
+          if (indice_history_comandi + 1 <= history_comandi.length){indice_history_comandi += 1;}
+          document.getElementById("input_comando").value = history_comandi[(history_comandi.length - indice_history_comandi)];
+        } else if (e.keyCode === 40) {
+          console.log('down arrow pressed')
+          if (indice_history_comandi - 1 > 0){indice_history_comandi -= 1;}
+          document.getElementById("input_comando").value = history_comandi[(history_comandi.length - indice_history_comandi)];
+        }
+      }
+    })
+
+
+    function js_sleep(millisecondi){
+      const date = Date.now();
+      let current_date = null
+      do{
+        current_date = Date.now()
+      }while(current_date-date < millisecondi)
+    }
+      
+    function getRandomInt(max) {
+      return Math.floor(Math.random() * max);
+    }
+      
+
+    function crea_tbl_sensori(){
+      var tbl_sensori = "<tr>";
+        for (const [key, value] of Object.entries(etichette_sensori)) {
+          tbl_sensori += '<td id="td_'+key+'" style="background-color: #f8f7f7" title="'+value+'"">'+key+"</td>"
+          if ((key > 1012)){
+            if((key-1033+12)%8 == 7) tbl_sensori +="</tr><tr>";
+          } else{
+            if((key-1001)%8 == 7) tbl_sensori +="</tr><tr>";
+          }
+        }
+        tbl_sensori += "<td style='background-color:#f8f7f7;'><td style='background-color:#f8f7f7;'><td style='background-color:#f8f7f7;'><td style='background-color:#f8f7f7;'></tr>";
+        document.getElementById("tbl_sensori").innerHTML = tbl_sensori;
+    }
+
+    function completaIP(lista_numeri){}
+    function memorizza_ip(ind_ip) {indirizzo_ip = ind_ip};
+
+    const sleep = (ms) => {
+          return new Promise(resolve => setTimeout(resolve, ms));
+      }
+
+
+    function pulisci_canvas(){
+      document.getElementById("shell_cella").value = "";
+    }
+
+    function invia_messaggio_occupato(){
+        r_occupa_cella = $.ajax({
+                    url: "/occupa?id_cella="+id_cella,
+                    async: true,
+                    type: 'GET',
+                });
+        r_occupa_cella.done(function (response, textStatus, jqXHR){
+          if(response != "OK"){
+            alert("Il robot non risponde o è spento. Verificare e provare a collegarsi nuovamente.")
+            clearInterval(richieste_oc_cella)
+          }
+        });
+        r_occupa_cella.fail(function (jqXHR, textStatus, errorThrown){
+          alert("Errore del server. Chiudere la pagina.")
+          clearInterval(richieste_oc_cella)
+          });
+    }
+
+
+  function connect_ws_shell(porta) {
+    console.log("TENTATIVO DI CONNESSIONE WS SHELL")
+    var ws_shell = new WebSocket("ws://{{indirizzo_ip}}:"+porta+"/");
+    ws_shell.onopen = function() {
+      // subscribe to some channels
+      /*ws_shell.send(JSON.stringify({
+          //.... some message the I must send when I connect ....
+      }));*/
+      ws_shell.send("PRONTOARICEVERE");
+    };
+
+    ws_shell.onmessage = function(event) {
+        console.log("WEB SOCKET SHELL MESSAGGIO");
+        if(var_comunicazione == "TCP"){
+        var dati = event.data
+        var dati_controllati = ""
+        console.log(dati)
+        //dati.replaceAll("ÿDÿÿÿÿÿDÿ", "\n")
+        for (let a = 0; a < dati.length; a++){
+          if (dati[a] >= ' ' || dati[a] == '\n') dati_controllati +=dati[a]
+        }
+        //dati_controllati = dati_controllati.replace("[4l", "");
+        document.getElementById("shell_cella").value = document.getElementById("shell_cella").value+dati_controllati;
+        logTa = document.getElementById("shell_cella")
+        logTa.scrollTop = logTa.scrollHeight;
+      }
+        ws_shell.send("PRONTOARICEVERE");
+        //console.log("INVIO")
+    };
+
+    ws_shell.onclose = function(e) {
+      console.log('Socket is closed. Reconnect will be attempted in 1 second.', e.reason);
+      setTimeout(function() {
+        var porta_ws_shell=0;
+        $.ajax({
+          type: "POST",
+          url: '/cella?id_cella='+id_cella,
+          data: {comando: 'START_SHELL'},
+          async: false,
+          success: function(datas) {// success callback
+            console.log("Porta riconessione: "+ datas)
+            porta_ws_shell = datas;
+          }
+        });
+
+        connect_ws_shell(porta_ws_shell);
+      }, 1000);
+    };
+
+    ws_shell.onerror = function(err) {
+      console.error('Socket encountered error: ', err.message, 'Closing socket');
+      ws_shell.close();
+    };
+  }
+
+  function connect_ws_shell_udp(porta) {
+    console.log("TENTATIVO DI CONNESSIONE WS SHELL UDP")
+    var ws_shell_udp = new WebSocket("ws://{{indirizzo_ip}}:"+porta+"/");
+    ws_shell_udp.onopen = function() {
+      // subscribe to some channels
+      document.getElementById("shell_cella").style.color = "yellow"
+      document.getElementById("shell_cella").style.backgroundColor = "black";
+    ws_shell_udp.send("PRONTOARICEVERE");
+    };
+
+    ws_shell_udp.onmessage = function(event) {
+        console.log("WEB SOCKET SHELL UDP MESSAGGIO")
+        var dati = event.data
+        var dati_controllati = ""
+        if(dati == "CHIUSURAWBSOCKETUDP"){
+          invia_messaggio_occupato();
+          richieste_oc_cella = setInterval(invia_messaggio_occupato,5000);
+          document.getElementById("shell_cella").style.color = "black";
+          document.getElementById("shell_cella").value = "Apertura del terminale ...";
+          document.getElementById("shell_cella").style.backgroundColor = "white";
+          var_comunicazione = "TCP";
+          ws_shell_udp.close();
+        }else{
+          for (let a = 0; a < dati.length; a++){
+            if (dati[a] >= ' ' || dati[a] == '\n') dati_controllati +=dati[a]
+          }
+          //dati_controllati = dati_controllati.replace("[4l", "");
+          document.getElementById("shell_cella").value = document.getElementById("shell_cella").value+dati_controllati;
+          logTa = document.getElementById("shell_cella")
+          logTa.scrollTop = logTa.scrollHeight;
+        }
+        ws_shell_udp.send("PRONTOARICEVERE");
+    };
+
+    ws_shell_udp.onclose = function(e) {
+      console.log('Socket is closed.', e.reason);
+    };
+
+    ws_shell_udp.onerror = function(err) {
+      console.error('Socket encountered error: ', err.message, 'Closing socket');
+      ws_shell_udp.close();
+    };
+  }
+
+
+  function connect_ws_info(porta) {
+    console.log("TENTATIVO DI CONNESSIONE WS INFO")
+    ws_info = new WebSocket("ws://{{indirizzo_ip}}:"+porta+"/");
+    ws_info.onopen = function() {
+      // subscribe to some channels
+      /*ws_info.send(JSON.stringify({
+          //.... some message the I must send when I connect ....
+      }));*/
+      ws_info.send("PRONTOARICEVERE");
+    };
+
+    ws_info.onmessage = function(event) {
+        console.log("WEB SOCKET INFO MESSAGGIO")
+        var dati = event.data
+          
+          // ----------------------------
+        if (dati.includes("@ERRORE@")){
+          console.log("DATI DI ERRORE: "+dati)
+          document.getElementById("div_alert").innerHTML = "Errore! "+dati.split("@ERRORE@")[1];
+          document.getElementById("div_alert").classList.replace("alert-success", "alert-danger");
+          document.getElementById("div_alert").style.display = "block";
+          ws_info.close();
+          crea_tbl_sensori();
+          for(let a = 1; a < 4; a++){
+            var c = document.getElementById("canvas"+a);
+            var ctx = c.getContext("2d");
+            ctx.beginPath();
+            ctx.clearRect(0, 0, c.width, c.height);
+          }
+
+          const do_sleep = async() => {
+            await sleep(5000);
+            document.getElementById("div_alert").style.display = "none";
+          }
+          do_sleep()
+          
+          return;
+        }else{
+
+          dati = eval('('+dati+')' )
+
+          for (const [key, value] of Object.entries(dati)) {
+            if(key == 'pos_joint'){
+              document.getElementById("val_asse_1").innerHTML = dati['pos_joint'][0]+",  "+ dati['pos_joint'][1]
+              document.getElementById("val_asse_3").innerHTML = dati['pos_joint'][2]
+              document.getElementById("val_asse_4").innerHTML = dati['pos_joint'][3]
+            }
+            else{
+              if (value == -1) document.getElementById("td_"+parseInt(key)).style.backgroundColor = "#a1ff98"
+              else document.getElementById("td_"+parseInt(key)).style.backgroundColor = "#eb9696"
+            }
+          }
+          var proporzione_asse1 = 40;
+          var proporzione_asse2 = 30;
+          var proporzione_asse3 = 0.4;
+          var proporzione_asse4 = 50;
+
+          
+
+          //////////////////////////////////
+
+          var c = document.getElementById("canvas1");
+          var ctx = c.getContext("2d");
+          ctx.beginPath();
+          ctx.clearRect(0, 0, c.width, c.height);
+          ctx.moveTo((c.width)/2, (c.height)/2);
+          ctx.arc((c.width)/2, (c.height)/2, 3, 0, 2 * Math.PI);
+          ctx.fillStyle = "black";
+          ctx.lineWidth = 3;
+          ctx.fill();
+          ctx.moveTo((c.width)/2, (c.height)/2);
+          var angle = dati["pos_joint"][0];
+          var x_asse1 = Math.cos(Math.PI * (90+angle) / 180)*proporzione_asse1;
+          var y_asse1 = Math.sin(Math.PI * (90+angle) / 180)*proporzione_asse1;
+
+
+          var pos_x = (c.width)/2 + x_asse1
+          var pos_y = (c.height)/2 - y_asse1
+          
+          ctx.strokeStyle = '#000000';
+          ctx.lineWidth = 3;
+          ctx.lineTo(pos_x, pos_y);
+          ctx.stroke();
+          
+          ctx.beginPath();
+          ctx.moveTo(pos_x, pos_y)
+          ctx.arc(pos_x, pos_y, 3, 0, 2 * Math.PI);
+          ctx.fillStyle = "red";
+          ctx.lineWidth = 3;
+          ctx.fill();
+          ctx.moveTo(pos_x, pos_y)
+          ctx.strokeStyle = '#ff0000';
+          ctx.lineWidth = 3;
+          var old_angle = dati["pos_joint"][0];
+          var angle = dati["pos_joint"][1];
+          var x_asse2 = Math.cos(Math.PI * (old_angle+angle+90) / 180)*proporzione_asse2;
+          var y_asse2 = Math.sin(Math.PI * (old_angle+angle+90) / 180)*proporzione_asse2;
+
+          ctx.lineTo(pos_x+x_asse2, pos_y-y_asse2);
+          ctx.stroke();
+
+          ///////////////////////////////////////////////
+          
+          var c = document.getElementById("canvas2");
+          var ctx = c.getContext("2d");
+          ctx.beginPath();
+          ctx.clearRect(0, 0, c.width, c.height);
+          ctx.moveTo((c.width)/2, 0);
+
+          var altezza = dati["pos_joint"][2];
+          ctx.lineWidth = 3;
+          ctx.lineTo((c.width)/2, altezza*proporzione_asse3);
+          ctx.stroke();
+
+          ///////////////////////////////////////////////
+          
+          var c = document.getElementById("canvas3");
+          var ctx = c.getContext("2d");
+          ctx.beginPath();
+          ctx.clearRect(0, 0, c.width, c.height);
+          ctx.moveTo((c.width)/2, c.height/2);
+
+          ctx.arc((c.width)/2, (c.height)/2, 3, 0, 2 * Math.PI);
+          ctx.fillStyle = "black";
+          ctx.lineWidth = 3;
+          ctx.fill();
+          ctx.moveTo((c.width)/2, c.height/2);
+
+          var angle = dati["pos_joint"][3];
+          var x_asse1 = Math.cos(Math.PI * angle / 180)*proporzione_asse4;
+          var y_asse1 = Math.sin(Math.PI * angle / 180)*proporzione_asse4;
+
+          pos_x = (c.width)/2 + x_asse1
+          pos_y = c.height/2 + y_asse1
+          ctx.lineWidth = 3;
+          ctx.lineTo(pos_x, pos_y);
+
+          ctx.moveTo((c.width)/2, c.height/2);
+
+          var x_asse2 = Math.cos(Math.PI * (angle+180) / 180)*proporzione_asse4;
+          var y_asse2 = Math.sin(Math.PI * (angle+180) / 180)*proporzione_asse4;
+
+          pos_x = (c.width)/2 + x_asse2
+          pos_y = c.height/2 + y_asse2
+          ctx.lineWidth = 3;
+          ctx.lineTo(pos_x,pos_y);
+          ctx.stroke();
+
+          // ---------------------------
+        }
+        ws_info.send("PRONTOARICEVERE");
+    };
+
+    ws_info.onclose = function(e) {
+
+      if(ricreare_ws_info){
+        console.log('Socket is closed. Reconnect will be attempted in 1 second.', e.reason);
+        setTimeout(function() {
+          var porta_ws_info=0;
+          $.ajax({
+            type: "POST",
+            url: '/cella?id_cella='+id_cella,
+            data: {comando: 'START_INFO'},
+            async: false,
+            success: function(datas) {// success callback
+              console.log("Porta riconessione: "+ datas)
+              porta_ws_info = datas;
+            }
+          });
+
+          connect_ws_info(porta_ws_info);
+        }, 1000);
+      }
+    };
+
+    ws_info.onerror = function(err) {
+      console.error('Socket encountered error: ', err.message, 'Closing socket');
+      ws_info.close();
+    };
+  }
+
+
+  function creazione_ws_info(){
+    crea_tbl_sensori();
+    for(let a = 1; a < 4; a++){
+      var c = document.getElementById("canvas"+a);
+      var ctx = c.getContext("2d");
+      ctx.beginPath();
+      ctx.clearRect(0, 0, c.width, c.height);
+    }
+    ricreare_ws_info=true
+    connect_ws_info(12000);
+  }
+
+  async function upload_file(form, url) {
+    let formData = new FormData(form);           
+    //formData.append("file", fileupload.files[0]);
+    const response = await fetch(url, {
+      method: "POST", 
+      body: formData
+    });
+    const rispostajs = await response.text();
+  
+    if (rispostajs == "OK"){
+      document.getElementById("div_alert").innerHTML = "l'upload è andato a buon fine";
+      document.getElementById("div_alert").classList.replace("alert-danger", "alert-success");
+    }
+    else {
+      document.getElementById("div_alert").innerHTML = "Errore! "+rispostajs;
+      document.getElementById("div_alert").classList.replace("alert-success", "alert-danger");
+    }
+
+    document.getElementById("div_alert").style.display = "block";
+    const do_sleep = async() => {
+      await sleep(5000);
+      document.getElementById("div_alert").style.display = "none";
+    }
+    do_sleep()
+
+    }
+
+    //----------- PROMPT ARTIGIANALE ----------
+    $( function () {
+    var dialog_schede, form,
+      allFields = $( [] ),
+      tips = $( ".validateTips" );
+ 
+    function updateTips( t ) {
+      tips
+        .text( t )
+        .addClass( "ui-state-highlight" );
+      setTimeout(function() {
+        tips.removeClass( "ui-state-highlight", 1500 );
+      }, 500 );
+    }
+ 
+    function checkLength( n, min, max ) {
+      var o = $( "#"+n )
+      if ( o.val().length > max || o.val().length < min ) {
+        o.addClass( "ui-state-error" );
+        updateTips( "Length of " + n + " must be between " +
+          min + " and " + max + "." );
+        return false;
+      } else {
+        return true;
+      }
+    }
+
+    function isnotEmptyControl(o){
+      var stringa = o.val()
+      if(stringa == "") {
+        o.addClass( "ui-state-error" );
+        return false
+      }
+      return true
+    }
+ 
+    function checkRegexp( o, regexp, n ) {
+      if ( !( regexp.test( o.val() ) ) ) {
+        o.addClass( "ui-state-error" );
+        updateTips( n );
+        return false;
+      } else {
+        return true;
+      }
+    }
+
+    function checkNumber(n, min){
+      var o = $( "#"+n )
+      if(o.val() == "") {
+        o.addClass( "ui-state-error" );
+        return false
+      }
+      if((o.val() >= min)) return true;
+      o.addClass( "ui-state-error" );
+      return false
+    }
+ 
+    function modificaInformazioniNSchede() {
+      var valid = true;
+
+      allFields = $( [] ).add( "#n_schede" )
+      allFields.removeClass( "ui-state-error" );
+      
+      valid = valid && checkNumber("n_schede", 1)
+      
+      if (valid) {
+        dialog_schede.dialog( "close" );
+        comando = "START";
+        //valore = prompt("Inserire il numero di schede da produrre: ")
+        valore = document.getElementById("n_schede").value;
+        console.log("valore start: "+valore)
+        if (valore == null) return;
+        console.log(parseInt(valore))
+        if (isNaN(parseInt(valore))){
+          document.getElementById("div_alert").innerHTML = "Errore! Il numero di schede non è valido!";
+          document.getElementById("div_alert").classList.replace("alert-success", "alert-danger");
+          document.getElementById("div_alert").style.display = "block";
+
+          const do_sleep = async() => {
+            await sleep(5000);
+            document.getElementById("div_alert").style.display = "none";
+          }
+          do_sleep()
+        }
+        var inputs = "comando="+comando+"&valore="+valore;
+        console.log("input: "+inputs)
+        inputs = inputs.replaceAll("+", "%2B")
+
+        request = $.ajax({
+            url: "/cella?id_cella="+id_cella,
+            type: "post",
+            data: inputs
+        });
+
+        // Callback handler that will be called on success
+        request.done(function (response, textStatus, jqXHR){
+          console.log("risposta: "+response)
+          if (response != "OK"){
+              document.getElementById("div_alert").innerHTML = "Errore! "+response;
+              document.getElementById("div_alert").classList.replace("alert-success", "alert-danger");
+              document.getElementById("div_alert").style.display = "block";
+
+              const do_sleep = async() => {
+                await sleep(5000);
+                document.getElementById("div_alert").style.display = "none";
+              }
+              do_sleep()
+          }
+        });
+
+      // Callback handler that will be called on failure
+      request.fail(function (jqXHR, textStatus, errorThrown){
+          // Log the error to the console
+          console.error(
+              "The following error occurred: "+
+              textStatus, errorThrown
+          );
+        });
+      }
+          return valid;
+        }
+ 
+    dialog_schede = $( "#dialog-schede" ).dialog({
+      autoOpen: false,
+      height: 400,
+      width: 500,
+      modal: true,
+      buttons: {
+        "Conferma": modificaInformazioniNSchede,
+        Annulla: function() {
+          dialog_schede.dialog( "close" );
+        }
+      },
+      close: function() {
+        //form[ 0 ].reset();
+        allFields.removeClass( "ui-state-error" );
+      },
+      open: function(){
+        console.log("ciao")
+      }
+    });
+    $( "#btn_start").button().on( "click", function(){
+      dialog_schede.dialog( "open" );
+    });
+  });
+    //------------------------------------------
+
+  
+    //----------- PROMPT ARTIGIANALE PER DOWNLOAD----------
+    $( function () {
+    var dialog_download, form,
+      allFields = $( [] ),
+      tips = $( ".validateTips" );
+ 
+    function updateTips( t ) {
+      tips
+        .text( t )
+        .addClass( "ui-state-highlight" );
+      setTimeout(function() {
+        tips.removeClass( "ui-state-highlight", 1500 );
+      }, 500 );
+    }
+ 
+    function checkLength( n, min) {
+      var o = $( "#"+n )
+      if (o.val().length < min ) {
+        o.addClass( "ui-state-error" );
+        updateTips( "Length of " + n + " must be more than " +
+          min);
+        return false;
+      } else {
+        return true;
+      }
+    }
+
+    function isnotEmptyControl(o){
+      var stringa = o.val()
+      if(stringa == "") {
+        o.addClass( "ui-state-error" );
+        return false
+      }
+      return true
+    }
+ 
+    function checkRegexp( o, regexp, n ) {
+      if ( !( regexp.test( o.val() ) ) ) {
+        o.addClass( "ui-state-error" );
+        updateTips( n );
+        return false;
+      } else {
+        return true;
+      }
+    }
+    function modificaInformazioniDownload() {
+      var valid = true;
+
+      allFields = $( [] ).add( "#input_file_da_scaricare" )
+      allFields.removeClass( "ui-state-error" );
+      
+      valid = valid && checkLength("input_file_da_scaricare", 1)
+      
+      if (valid) {
+        dialog_download.dialog( "close" );
+        comando = "DOWNLOAD";
+        //valore = prompt("Inserire il numero di schede da produrre: ")
+        valore = document.getElementById("input_file_da_scaricare").value;
+        if (valore == null) return;
+        console.log(parseInt(valore))
+        if (valore == "null"){
+          document.getElementById("div_alert").innerHTML = "Errore! Inserire un percorso!";
+          document.getElementById("div_alert").classList.replace("alert-success", "alert-danger");
+          document.getElementById("div_alert").style.display = "block";
+
+          const do_sleep = async() => {
+            await sleep(5000);
+            document.getElementById("div_alert").style.display = "none";
+          }
+          do_sleep()
+        }
+        var inputs = "comando="+comando+"&valore="+valore;
+        console.log("input: "+inputs)
+        inputs = inputs.replaceAll("+", "%2B")
+
+        request = $.ajax({
+            url: "/cella?id_cella="+id_cella,
+            type: "post",
+            data: inputs
+        });
+
+        // Callback handler that will be called on success
+        request.done(function (response, textStatus, jqXHR){
+        console.log("risposta: "+response)
+          if (response.includes("___QUESTOÈUNDOWNLOAD___")){
+
+          response = response.replace("___QUESTOÈUNDOWNLOAD___", "")
+
+          var blob = new Blob ([response], {"type": "text/plain"});
+          var a = document.createElement ('a');
+          a.download = valore;
+          a.href = window.URL.createObjectURL (blob);
+          a.click ();
+          //alert ('Data saved');
+          }else{
+          document.getElementById("div_alert").innerHTML = "Errore! "+response;
+          document.getElementById("div_alert").classList.replace("alert-success", "alert-danger");
+          document.getElementById("div_alert").style.display = "block";
+
+          const do_sleep = async() => {
+            await sleep(5000);
+            document.getElementById("div_alert").style.display = "none";
+          }
+          do_sleep()
+        } 
+        });
+
+      // Callback handler that will be called on failure
+      request.fail(function (jqXHR, textStatus, errorThrown){
+          // Log the error to the console
+          console.error(
+              "The following error occurred: "+
+              textStatus, errorThrown
+          );
+        });
+      }
+          return valid;
+        }
+ 
+    dialog_download = $( "#dialog-download" ).dialog({
+      autoOpen: false,
+      height: 400,
+      width: 500,
+      modal: true,
+      buttons: {
+        "Conferma": modificaInformazioniDownload,
+        Annulla: function() {
+          dialog_download.dialog( "close" );
+        }
+      },
+      close: function() {
+        //form[ 0 ].reset();
+        allFields.removeClass( "ui-state-error" );
+      },
+      open: function(){
+        console.log("ciao")
+      }
+    });
+    $( "#download_button").button().on( "click", function(){
+      dialog_download.dialog( "open" );
+    });
+  });
+    //------------------------------------------
+
+
+  function main(){
+    var lista_celle_disponibili = JSON.parse('{{lista_celle_disponibili | tojson}}');
+    //invia_messaggio_occupato();
+    crea_barra(lista_celle_disponibili);
+    crea_tbl_sensori();
+    connect_ws_shell_udp({{porta_udp}});
+    connect_ws_shell({{porta}});
+
+
+  }
+
+</script>
+
+
+
+  {%else%}
+        <div class="container" align="center" style="margin-top: 5%;">
+          <h2 align="center" style="color: #00A6A6;">Connessione alla <b>cella {{id_cella}}</b></h2>
+          <br>
+          <form action="" method="post">
+            <table><tr><td><div class="input-group mb-3"><input type="text" class="form-control inputconnetti" placeholder="Indirizzo IP" name="indirizzo_ip" id="indirizzo_ip" style="opacity: .5;" readonly>
+              </div></tr>
+            <tr><td><input type="porta" value="1999" class="form-control inputconnetti" style="opacity: .5;" readonly name="porta"></td></tr></table><br><br>
+            <table class="table table-borderless" style="width:auto;"><tr>
+              <td><button type="submit" class="btn" style="background-color: #00A6A6;" value="CONNETTI" name="comando">connetti</button></td>
+              <td><button class="btn btn-dark"><a href="/network_controller?id_cella={{id_cella}}" target="_blank" style="text-decoration:none; color: white;">cambia IP</a></button></td>
+            </tr>
+            </table>
+          </form>
+        </div>
+        {% if errore %}
+        <div align="center"><p style="color:crimson"><strong>Errore:</strong> {{ errore }}</p></div>
+        {% endif %}
+
+      <script>
+        function completaIP(lista_numeri){
+          console.log(lista_numeri)
+          document.getElementById("indirizzo_ip").value = lista_numeri[id_cella][0];
+        }
+
+        function main(){
+          var lista_celle_disponibili = JSON.parse('{{lista_celle_disponibili | tojson}}');
+          crea_barra(lista_celle_disponibili);
+          completaIP(lista_celle_disponibili);
+        }
+
+        function dec2bin(dec) {
+          return (dec >>> 0).toString(2);
+        }
+
+
+      </script>
+  {% endif %}
+
+
+
+</body>
+</html>

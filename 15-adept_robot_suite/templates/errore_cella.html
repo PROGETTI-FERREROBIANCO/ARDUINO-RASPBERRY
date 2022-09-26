@@ -1,0 +1,44 @@
+<!doctype html>
+<html>
+<head>
+    <!-- Required meta tags -->
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <!-- Bootstrap CSS -->
+    <link href="/static/css/bootstrap.min.css" rel="stylesheet">
+    <script src="/static/js/jquery-3.6.0.min.js"></script>
+    <!-- <link href="/static/css/bootstrap.min.css" rel="stylesheet" integrity="sha384-1BmE4kWBq78iYhFldvKuhfTAU6auU8tT94WrHftjDbrCEXSU1oBoqyl2QvZ6jIW3" crossorigin="anonymous"> -->
+
+    <title>Scararobot Control Panel</title>
+</head>
+<body style="background-color:#f4f4f4;" onload="caricaComponenti({{lista_celle_disponibili}})">
+  <nav class="navbar navbar-expand-lg navbar-light" style="border-color:#00A6A6">  
+    <div class="collapse navbar-collapse" id="navbarSupportedContent">
+      <ul class="navbar-nav mr-auto" id="ul_barra_iniziale">
+        <li class="nav-item active">
+          <a class="nav-link" href="/">Home</a>
+        </li>
+        <script>
+          function caricaComponenti(lista_numeri){
+                crea_barra(lista_numeri)
+            
+          }
+          
+          function crea_barra(lista_numeri){
+            var stringa_b_i = "";
+            for (const [key, value] of Object.entries(lista_numeri)) {
+              stringa_b_i += '</li><li class="nav-item"><a class="nav-link" href="/cella?id_cella='+key+'">Cella '+key+'</a></li>'
+            }
+            document.getElementById("ul_barra_iniziale").innerHTML +=stringa_b_i;
+          }
+        </script>
+      </ul>
+    </div>
+  </nav><br>
+<script>var id_cella = {{id_cella}};</script>
+<div align="Center">
+  <h3 align="center" style="color:crimson;">Errore!</h3>
+  {{errore | safe}}
+</div>
+</body>
+</html>
