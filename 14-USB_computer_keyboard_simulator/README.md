@@ -3,8 +3,7 @@
 This project makes it possible to use a computer, especially its keyboard, as an output device for another computer.
 
 ## Hardware
-The hardware looks like this. There are two ports, appropriately labeled with the words *slave* for the computer whose keyboard you will use and *master* for the PC on which what has been typed will be written.
-Inside there are an **Arduino Nano** and an **Arduino ProMicro** that take care of the communication between the *master* and the *slave*.
+The hardware looks like this. There are two ports, appropriately labelled with the words *slave* for the computer whose keyboard will be used and _master_ for the PC on which what has been typed will be written. Inside there is an **Arduino** **Nano** and an **Arduino ProMicro**, which, through an **I2C** communication, make the master and the slave talk to each other.
 
 <img src="./photos/foto_01.jpeg" style="width:20%"></img>
 <img src="./photos/foto_02.jpeg" style="width:20%"></img>
