@@ -9,6 +9,9 @@ Inside there are an **Arduino Nano** and an **Arduino ProMicro** that take care 
 <img src="./photos/foto_01.jpeg" style="width:20%"></img>
 <img src="./photos/foto_02.jpeg" style="width:20%"></img>
 
+The **electrical circuit** is shown below:
+<img src="./wiring_diagram.png" style="width:20%"></img>
+
 ## Software
 The code that allows this device to work is shown below and inside the *master* and *slave* folders.
 
