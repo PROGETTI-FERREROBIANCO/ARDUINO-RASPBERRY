@@ -16,6 +16,8 @@ The **electrical circuit** is shown below:
 ## Software
 The code that allows this device to work is shown below and inside the *master* and *slave* folders.
 
+> **MASTER CODE**
+
 ```#include "Keyboard.h"
 #include <Wire.h>
 
