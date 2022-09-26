@@ -72,3 +72,7 @@ void loop() {
   Wire.onRequest(requestEvent); 
 }
 ```
+
+### Authors
+- [@GabrieleFerrero](https://github.com/GabrieleFerrero)
+- [@IsabellaBianco](https://github.com/IsabellaBianco)
