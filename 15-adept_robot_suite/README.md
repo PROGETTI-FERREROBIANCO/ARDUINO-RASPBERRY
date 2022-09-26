@@ -49,7 +49,7 @@ Nel caso si decida di caricare il sistema operativo dal server TFTP la cartella 
 È possibile inviare, attraverso la barra dei comandi, delle istruzioni scritte direttamente in formato esadecimale:
 !*comando_esadecimale*
 
-N.B. Se si volessore inviare dei comandi che prevedono come primo carattere un `!` aggiungere precedentemente uno spazio.
+N.B. Se si volessero inviare dei comandi che prevedono come primo carattere un `!` aggiungere precedentemente uno spazio.
 
 ---
 
