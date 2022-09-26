@@ -45,6 +45,14 @@ Nel caso si decida di caricare il sistema operativo dal server TFTP la cartella 
 
 ---
 
+### *Invio di comandi in esadecimale*
+È possibile inviare, attraverso la barra dei comandi, delle istruzioni scritte direttamente in formato esadecimale:
+!*comando_esadecimale*
+
+N.B. Se si volessore inviare dei comandi che prevedono come primo carattere un `!` aggiungere precedentemente uno spazio.
+
+---
+
 ### *Implementazione dell'applicativo Adept Network Controller*
 Al momento della connessione ad una cella è presente un'altra opzione che prende il nome di *cambio ip*. Questa impostazione permette di modificare i seguenti parametri della cella:
 
