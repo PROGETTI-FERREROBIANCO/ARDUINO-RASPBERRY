@@ -203,4 +203,3 @@ Di seguito sono riportati alcuni consigli per un buon utilizzo del *software*:
 
 - Dopo aver acceso una cella, aperto una porta o premuto un pulsante, per poter muovere il robot è necessario dare il comando `ENABLE POWER` sulla *shell*.
 - Dopo la disconnessione da una cella attendere circa 10 secondi prima di provare a ricollegarsi
-- 
