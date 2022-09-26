@@ -144,8 +144,8 @@ In caso di errore di una qualunque procedura, comparirà un *alert* nella pagina
 
 Le informazioni che sono richieste all’interno di questa pagina sono:
 
-> **Posizioni del magazzino e lo zero della scheda.**
-> *All’interno della calibrazione sono presenti il magazzino di destra, il magazzino di sinistra e la posizione zero della scheda.*
+> **Posizioni del magazzino e lo zero della scheda**
+> *(all’interno della calibrazione sono presenti il magazzino di destra, il magazzino di sinistra e la posizione zero della scheda).*
 
 | Campo | Descrizione |
 |--|--|
