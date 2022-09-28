@@ -2,7 +2,7 @@
 # USB computer keyboard simulator
 This project makes it possible to use a computer, especially its keyboard, as an output device for another computer.
 
-To see how it works, there is a demonstration ![video on YouTube](https://youtu.be/wuPQ8DPLwTY).
+To see how it works, there is a demonstration [**video on YouTube**](https://youtu.be/wuPQ8DPLwTY).
 
 ## Hardware
 The hardware looks like this. There are two ports, appropriately labelled with the words *slave* for the computer whose keyboard will be used and _master_ for the PC on which what has been typed will be written. Inside there is an **Arduino** **Nano** and an **Arduino ProMicro**, which, through an **I2C** communication, make the _master_ and the _slave_ talk to each other.
